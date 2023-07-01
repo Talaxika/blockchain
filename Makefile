@@ -1,7 +1,7 @@
-exec = run.out
+exec = run.exe
 sources = $(wildcard src/*.c)
 objects = $(sources:.c=.o)
-flags = -g -Wall -lm -ldl -fPIC -rdynamic
+flags = -g -Wall -lm -fPIC
 
 
 $(exec): $(objects)
@@ -12,6 +12,7 @@ $(exec): $(objects)
 
 clean:
 	-rm *.out
+	-rm *.exe
 	-rm *.o
 	-rm *.a
 	-rm src/*.o
