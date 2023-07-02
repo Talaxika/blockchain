@@ -5,6 +5,7 @@
 #include <ws2tcpip.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 
 
 // Need to link with Ws2_32.lib, Mswsock.lib, and Advapi32.lib
@@ -12,28 +13,29 @@
 #pragma comment (lib, "Mswsock.lib")
 #pragma comment (lib, "AdvApi32.lib")
 
-// gcc client.c -o client.exe -lwsock32 -lWs2_32; ./client.exe localhost
+// gcc client.c -o client.exe -lwsock32 -lWs2_32; ./client.exe
 
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT "27015"
+#define IP_ADDRESS_LOCALHOST "localhost"
+#define IP_ADDRESS_IPv4 "192.168.1.6"
 
-int __cdecl main(int argc, char **argv) 
+int __cdecl main(int argc, char **argv)
 {
     WSADATA wsaData;
     SOCKET ConnectSocket = INVALID_SOCKET;
     struct addrinfo *result = NULL,
                     *ptr = NULL,
                     hints;
-    const char *sendbuf = "this is a test";
+
+    time_t t;
+    time(&t);
+
+    char sendbuf[DEFAULT_BUFLEN] = "this is a test";
+    sprintf(sendbuf, "%d", t);
     char recvbuf[DEFAULT_BUFLEN];
     int iResult;
     int recvbuflen = DEFAULT_BUFLEN;
-    
-    // Validate the parameters
-    if (argc != 2) {
-        printf("usage: %s server-name\n", argv[0]);
-        return 1;
-    }
 
     // Initialize Winsock
     iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
@@ -48,7 +50,7 @@ int __cdecl main(int argc, char **argv)
     hints.ai_protocol = IPPROTO_TCP;
 
     // Resolve the server address and port
-    iResult = getaddrinfo(argv[1], DEFAULT_PORT, &hints, &result);
+    iResult = getaddrinfo(IP_ADDRESS_LOCALHOST, DEFAULT_PORT, &hints, &result);
     if ( iResult != 0 ) {
         printf("getaddrinfo failed with error: %d\n", iResult);
         WSACleanup();
@@ -59,7 +61,7 @@ int __cdecl main(int argc, char **argv)
     for(ptr=result; ptr != NULL ;ptr=ptr->ai_next) {
 
         // Create a SOCKET for connecting to server
-        ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype, 
+        ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype,
             ptr->ai_protocol);
         if (ConnectSocket == INVALID_SOCKET) {
             printf("socket failed with error: %ld\n", WSAGetLastError());
