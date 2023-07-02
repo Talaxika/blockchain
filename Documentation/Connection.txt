@@ -1,0 +1,262 @@
+# blockchain
+
+1) Connection documentation: Using Winsock
+
+1.1) Getting started:
+This section describes procedures and programming techniques employed with Winsock.
+
+There are two distinct types of socket network applications: Server and Client.
+Servers and Clients have different behaviors; therefore, the process of creating them is different. What follows is the general model for creating a streaming TCP/IP Server and Client.
+
+Server:
+Initialize Winsock.
+Create a socket.
+Bind the socket.
+Listen on the socket for a client.
+Accept a connection from a client.
+Receive and send data.
+Disconnect.
+
+Client:
+Initialize Winsock.
+Create a socket.
+Connect to the server.
+Send and receive data.
+Disconnect.
+
+1.2) Creating a basic winsock app:
+
+- To create a basic Winsock application, first I created a new empty project.
+I added an empty C source file to the project. I ensured that the build environment refers to the Include, Lib, and Src directories of the Microsoft Windows Software Development Kit (SDK) or the earlier Platform Software Development Kit (SDK).
+
+- I ensured that the build environment links to the Winsock Library file Ws2_32.lib. Applications that use Winsock must be linked with the Ws2_32.lib library file. The #pragma comment indicates to the linker that the Ws2_32.lib file is needed. Also when compiling, the build options -lwsock32 -lWs2_32 are needed, to help linking the libs.
+
+- I used the Winsock API by including the Winsock 2 header files. The Winsock2.h header file contains most of the Winsock functions, structures, and definitions. The Ws2tcpip.h header file contains definitions introduced in the WinSock 2 Protocol-Specific Annex document for TCP/IP that includes newer functions and structures used to retrieve IP addresses.
+
+###### Code sample start:
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
+#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <stdio.h>
+
+#pragma comment(lib, "Ws2_32.lib")
+
+int main() {
+  return 0;
+}
+###### Code sample end.
+
+- The WSAStartup function is called to initiate use of WS2_32.dll.
+The WSADATA structure contains information about the Windows Sockets implementation. The MAKEWORD(2,2) parameter of WSAStartup makes a request for version 2.2 of Winsock on the system, and sets the passed version as the highest version of Windows Sockets support that the caller can use.
+
+###### Code sample start:
+int iResult;
+
+// Initialize Winsock
+iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
+if (iResult != 0) {
+    printf("WSAStartup failed: %d\n", iResult);
+    return 1;
+}
+###### Code sample end.
+
+1.3) Winsock Client Application.
+
+After initialization, a SOCKET object must be instantiated for use by the client.
+
+1.3.1) To create a socket
+
+1.3.1.1) First I declared an addrinfo object that contains a sockaddr structure and initialized these values. For this application, the Internet address family is unspecified so that either an IPv6 or IPv4 address can be returned. The application requests the socket type to be a stream socket for the TCP protocol.
+
+###### Code sample start:
+struct addrinfo *result = NULL,
+                *ptr = NULL,
+                hints;
+
+ZeroMemory( &hints, sizeof(hints) );
+hints.ai_family = AF_UNSPEC;
+hints.ai_socktype = SOCK_STREAM;
+hints.ai_protocol = IPPROTO_TCP;
+###### Code sample end.
+
+1.3.1.2) Then i called the getaddrinfo function requesting the IP address for the server name passed on the command line. The TCP port on the server that the client will connect to is defined by DEFAULT_PORT as 27015 in this sample. The getaddrinfo function returns its value as an integer that is checked for errors.
+
+###### Code sample start:
+#define DEFAULT_PORT "27015"
+
+// Resolve the server address and port
+iResult = getaddrinfo(argv[1], DEFAULT_PORT, &hints, &result);
+if (iResult != 0) {
+    printf("getaddrinfo failed: %d\n", iResult);
+    WSACleanup();
+    return 1;
+}
+###### Code sample end.
+
+1.3.1.3) I created a SOCKET object called ConnectSocket.
+
+###### Code sample start:
+SOCKET ConnectSocket = INVALID_SOCKET;
+###### Code sample end.
+
+1.3.1.4) I called the socket function and returned its value to the ConnectSocket variable. For this application, use the first IP address returned by the call to getaddrinfo that matched the address family, socket type, and protocol specified in the hints parameter. In this example, a TCP stream socket was specified with a socket type of SOCK_STREAM and a protocol of IPPROTO_TCP. The address family was left unspecified (AF_UNSPEC), so the returned IP address could be either an IPv6 or IPv4 address for the server.
+
+If the client application wants to connect using only IPv6 or IPv4, then the address family needs to be set to AF_INET6 for IPv6 or AF_INET for IPv4 in the hints parameter.
+
+###### Code sample start:
+// Attempt to connect to the first address returned by
+// the call to getaddrinfo
+ptr=result;
+
+// Create a SOCKET for connecting to server
+ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype, 
+    ptr->ai_protocol);
+###### Code sample end.
+
+1.3.1.5) Then I checked for errors to ensure that the socket is a valid socket.
+
+###### Code sample start:
+if (ConnectSocket == INVALID_SOCKET) {
+    printf("Error at socket(): %ld\n", WSAGetLastError());
+    freeaddrinfo(result);
+    WSACleanup();
+    return 1;
+}
+###### Code sample end.
+
+Error detection is a key part of successful networking code. If the socket call fails, it returns INVALID_SOCKET. The if statement in the previous code is used to catch any errors that may have occurred while creating the socket. WSAGetLastError returns an error number associated with the last error that occurred.
+
+WSACleanup is used to terminate the use of the WS2_32 DLL.
+
+1.3.2) Connect to a socket
+1.3.2.1) The connect function is called, passing the created socket and the sockaddr structure as parameters. Check for general errors.
+
+###### Code sample start:
+// Connect to server.
+iResult = connect( ConnectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
+if (iResult == SOCKET_ERROR) {
+    closesocket(ConnectSocket);
+    ConnectSocket = INVALID_SOCKET;
+}
+
+// Should really try the next address returned by getaddrinfo
+// if the connect call failed
+// But for this simple example we just free the resources
+// returned by getaddrinfo and print an error message
+
+freeaddrinfo(result);
+
+if (ConnectSocket == INVALID_SOCKET) {
+    printf("Unable to connect to server!\n");
+    WSACleanup();
+    return 1;
+}
+###### Code sample end.
+
+The getaddrinfo function is used to determine the values in the sockaddr structure. In this example, the first IP address returned by the getaddrinfo function is used to specify the sockaddr structure passed to the connect. If the connect call fails to the first IP address, then try the next addrinfo structure in the linked list returned from the getaddrinfo function.
+
+The information specified in the sockaddr structure includes:
+
+- the IP address of the server that the client will try to connect to.
+- the port number on the server that the client will connect to. This port was specified as port 27015 when the client called the getaddrinfo function.
+
+1.3.3) Sending and Receiving Data on the client
+The following code demonstrates the send and recv functions used by the client once a connection is established.
+The send and recv functions both return an integer value of the number of bytes sent or received, respectively, or an error. Each function also takes the same parameters: the active socket, a char buffer, the number of bytes to send or receive, and any flags to use.
+
+###### Code sample start:
+#define DEFAULT_BUFLEN 512
+
+int recvbuflen = DEFAULT_BUFLEN;
+
+const char *sendbuf = "this is a test";
+char recvbuf[DEFAULT_BUFLEN];
+
+int iResult;
+
+// Send an initial buffer
+iResult = send(ConnectSocket, sendbuf, (int) strlen(sendbuf), 0);
+if (iResult == SOCKET_ERROR) {
+    printf("send failed: %d\n", WSAGetLastError());
+    closesocket(ConnectSocket);
+    WSACleanup();
+    return 1;
+}
+
+printf("Bytes Sent: %ld\n", iResult);
+
+// shutdown the connection for sending since no more data will be sent
+// the client can still use the ConnectSocket for receiving data
+iResult = shutdown(ConnectSocket, SD_SEND);
+if (iResult == SOCKET_ERROR) {
+    printf("shutdown failed: %d\n", WSAGetLastError());
+    closesocket(ConnectSocket);
+    WSACleanup();
+    return 1;
+}
+
+// Receive data until the server closes the connection
+do {
+    iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
+    if (iResult > 0)
+        printf("Bytes received: %d\n", iResult);
+    else if (iResult == 0)
+        printf("Connection closed\n");
+    else
+        printf("recv failed: %d\n", WSAGetLastError());
+} while (iResult > 0);
+###### Code sample end.
+
+1.3.4) Disconnectiong the Client
+1.3.4.1) When the client is done sending data to the server, the shutdown function can be called specifying SD_SEND to shutdown the sending side of the socket. This allows the server to release some of the resources for this socket. The client application can still receive data on the socket.
+
+###### Code sample start:
+// shutdown the send half of the connection since no more data will be sent
+iResult = shutdown(ConnectSocket, SD_SEND);
+if (iResult == SOCKET_ERROR) {
+    printf("shutdown failed: %d\n", WSAGetLastError());
+    closesocket(ConnectSocket);
+    WSACleanup();
+    return 1;
+}
+###### Code sample end.
+
+1.3.4.2) When the client application is done receiving data, the closesocket function is called to close the socket.
+
+When the client application is completed using the Windows Sockets DLL, the WSACleanup function is called to release resources.
+
+###### Code sample start:
+// cleanup
+closesocket(ConnectSocket);
+WSACleanup();
+
+return 0;
+###### Code sample end.
+
+
+1.4) Winsock Client Application.
+1.4.1) The creation of a socket for the server side.
+// TODO:
+
+#####
+The server application should be started before the client application is started.
+
+To execute the server, compile the complete server source code and run the executable file. The server application listens on TCP port 27015 for a client to connect. Once a client connects, the server receives data from the client and echoes (sends) the data received back to the client. When the client shuts down the connection, the server shuts down the client socket, closes the socket, and exits.
+
+To execute the client, compile the complete client source code and run the executable file. The client application requires that name of the computer or IP address of the computer where the server application is running is passed as a command-line parameter when the client is executed. These are the commands, if the client and server are executed on the sample computer:
+
+gcc server.c -o server.exe -lwsock32 -lWs2_32
+./server.exe
+
+gcc client.c -o client.exe -lwsock32 -lWs2_32
+./client.exe localhost
+
+To find the correct ip address, as to use the client side on another computer, run the ipconfig command in the terminal. Usually, the correct address is the IPv4 Address. In that case, when I tried this procedure on my laptop + PC, which are connected to same network, the server was my PC, the client was my laptop. The command on my laptop looked like:
+
+./client.exe 192.168.1.6 on my PC
+
+The client tries to connect to the server on TCP port 27015. Once the client connects, the client sends data to the server and receives any data send back from the server. The client then closes the socket and exits.

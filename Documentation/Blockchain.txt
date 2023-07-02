@@ -1,0 +1,3 @@
+1) Distributed ledger
+
+The ledger or ledger, is the record of each and every one of the operations and transactions that are carried out within a blockchain. With this, the ledger becomes one of the fundamental pieces of transparency, security and privacy of blockchain technology and cryptocurrencies.

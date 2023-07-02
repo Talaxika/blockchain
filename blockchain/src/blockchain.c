@@ -22,8 +22,6 @@ hash_t isHashValid(Block block)
 {
     // return generateHash(block) == block.hash;
 }
-
-
 // TODO:
 time_t get_timestamp()
 {
@@ -35,7 +33,7 @@ void add_block(Blockchain *blockchain, Transaction tx) {
 
     block.index = blockchain->num_blocks;
     block.timestamp = get_timestamp();
-    block.transaction = tx;
+    block.transactions[0] = tx;
 
     Block previous_block = blockchain->blocks[blockchain->num_blocks - 1];
     // memcpy(block.prev_hash, previous_block.hash, MAX_HASH_SIZE);
@@ -56,14 +54,13 @@ void initiateFirstBlock(Blockchain *chain)
     {
         .amount = 0,
         .sender = NULL,
-        .recipient = NULL
     };
 
     Block block =
     {
         .index = 0,
         .prev_hash = NULL,
-        .transaction = tx,
+        .transactions[0] = tx,
         .timestamp = get_timestamp(),
         .hash = "genesisHASH"
     };
@@ -79,9 +76,8 @@ void print_block(Block block) {
     printf("  Prev Hash: %s\n", block.prev_hash);
     printf("  Hash: %s\n", block.hash);
     printf("  Transaction:\n");
-    printf("    Sender: %s\n", block.transaction.sender);
-    printf("    Recipient: %s\n", block.transaction.recipient);
-    printf("    Amount: %f\n", block.transaction.amount);
+    printf("    Sender: %s\n", block.transactions[0].sender);
+    printf("    Amount: %f\n", block.transactions[0].amount);
 }
 
 void print_blockchain(Blockchain chain) {
