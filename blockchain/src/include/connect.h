@@ -1,7 +1,10 @@
 #ifndef CONNECT_H
 #define CONNECT_H
 
-#define DEFAULT_BUFLEN 15
+#define DEFAULT_BUFLEN 16
+
+#define DEFAULT_PORT "27015"
+
 
 char* connect_recieve(void);
 

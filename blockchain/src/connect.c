@@ -1,12 +1,9 @@
 #undef UNICODE
-
 #define WIN32_LEAN_AND_MEAN
 
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#include <stdlib.h>
-#include <stdio.h>
 
 #include "include/blockchain.h"
 #include "include/connect.h"
@@ -17,7 +14,11 @@
 
 // gcc server.c -o server.exe -lwsock32 -lWs2_32
 
-#define DEFAULT_PORT "27015"
+typedef struct
+{
+    /* data */
+} conn_cfg_t;
+
 
 char* connect_recieve(void)
 {
@@ -97,9 +98,13 @@ char* connect_recieve(void)
     closesocket(ListenSocket);
 
     // Receive until the peer shuts down the connection
+
+    // TODO: make it that it sends a cfg/header, the this side returns once to tell it to send
+    // the whole data
     do {
 
         iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
+        printf("There: %s\n", recvbuf);
         if (iResult > 0) {
             printf("Bytes received: %d\n", iResult);
 

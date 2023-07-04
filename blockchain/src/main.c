@@ -4,24 +4,34 @@
 #define ROTATIONS 2
 
 int main() {
+
+    /******SETUP*******/
     Blockchain btc = {0};
     initiateFirstBlock(&btc);
     char* end = NULL;
     Block block = {0};
+    
+    Transaction* local_transactions;
     static const Block empty_block = {0};
 
     char* (*recv)(void) = &connect_recieve;
 
+    /* TODO: Make it so that it fills transactions locally, until a block is "solved/generated"
+     * Then it puts the transaction array inside the block and then it generates hash of the block
+     * based on the transactions or sth.
+     * Then add the block to the blockchain and repeat the cycle.
+     */
+
+    /******Begin processes, each rotation is one block added*******/
     int rotations = 0;
     while (rotations < ROTATIONS)
     {
         char* recv_buff = (*recv)();
-        printf("%s\n", recv_buff);
         add_transaction(&block, recv_buff);
-        block = empty_block;
         rotations++;
     }
 
+    /******Clean up, print, etc...*******/
     add_block(&btc, block);
     print_blockchain(btc);
     return 0;

@@ -15,7 +15,7 @@
 
 // gcc client.c -o client.exe -lwsock32 -lWs2_32; ./client.exe
 
-#define DEFAULT_BUFLEN 512
+#define DEFAULT_BUFLEN 16
 #define DEFAULT_PORT "27015"
 #define IP_ADDRESS_LOCALHOST "localhost"
 #define IP_ADDRESS_IPv4 "192.168.1.6"
@@ -31,8 +31,9 @@ int __cdecl main(int argc, char **argv)
     time_t t;
     time(&t);
 
-    char sendbuf[DEFAULT_BUFLEN] = "this is a test";
-    sprintf(sendbuf, "%d", t);
+    char sendbuf[DEFAULT_BUFLEN] = "";
+    snprintf(sendbuf, DEFAULT_BUFLEN, "%d", t);
+    
     char recvbuf[DEFAULT_BUFLEN];
     int iResult;
     int recvbuflen = DEFAULT_BUFLEN;
@@ -88,6 +89,7 @@ int __cdecl main(int argc, char **argv)
     }
 
     // Send an initial buffer
+    printf("Here: %s\n", sendbuf);
     iResult = send( ConnectSocket, sendbuf, (int)strlen(sendbuf), 0 );
     if (iResult == SOCKET_ERROR) {
         printf("send failed with error: %d\n", WSAGetLastError());
