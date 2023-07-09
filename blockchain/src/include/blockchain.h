@@ -15,6 +15,11 @@
 typedef char* hash_t;
 
 typedef struct {
+  // public key
+  // sensor id
+} sensor_info_t;
+
+typedef struct {
   int index;
   hash_t sender;
   char* amount;
@@ -31,7 +36,7 @@ typedef struct {
 } Block;
 
 typedef struct {
-  Block* blocks;
+  Block* blocks; // TODO: fixed size because of transfer to another PC
   int num_blocks;
 } Blockchain;
 

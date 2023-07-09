@@ -3,8 +3,12 @@
 
 #define ROTATIONS 2
 
+Blockchain bc;
+
 int main() {
 
+    // Check what is done by other blockchains
+    // TODO: if first generate, else wait to recieve BC
     /******SETUP*******/
     Blockchain btc = {0};
     initiateFirstBlock(&btc);
@@ -32,7 +36,9 @@ int main() {
     }
 
     /******Clean up, print, etc...*******/
+    // Verify hashes of other blocks
     add_block(&btc, block);
     print_blockchain(btc);
+    // periodically write in file
     return 0;
 }
