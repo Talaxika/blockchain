@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
-
+#include <stdint.h>
 
 // Need to link with Ws2_32.lib, Mswsock.lib, and Advapi32.lib
 #pragma comment (lib, "Ws2_32.lib")
@@ -20,6 +20,25 @@
 #define IP_ADDRESS_LOCALHOST "localhost"
 #define IP_ADDRESS_IPv4 "192.168.1.6"
 
+typedef enum
+{
+    TYPE_CHAR,   /** val=1 **/
+    TYPE_INT,    /** val=2 **/
+    TYPE_DOUBLE, /** val=3 **/
+
+} DataType;
+
+typedef struct {
+    uint32_t sen_id;
+} sensor_info_t;
+
+typedef struct
+{
+    sensor_info_t sen_info;
+    DataType type;
+    uint32_t buf_len;
+} header_cfg_t;
+
 int __cdecl main(int argc, char **argv)
 {
     WSADATA wsaData;
@@ -31,12 +50,17 @@ int __cdecl main(int argc, char **argv)
     time_t t;
     time(&t);
 
+    header_cfg_t hdr_cfg = {0};
+    hdr_cfg.type = TYPE_INT;
+    hdr_cfg.sen_info.sen_id = 111;
+
     char sendbuf[DEFAULT_BUFLEN] = "";
     snprintf(sendbuf, DEFAULT_BUFLEN, "%d", t);
+    hdr_cfg.buf_len = strlen(sendbuf);
     
     char recvbuf[DEFAULT_BUFLEN];
     int iResult;
-    int recvbuflen = DEFAULT_BUFLEN;
+    int recvbuflen = 1;
 
     // Initialize Winsock
     iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
@@ -90,7 +114,7 @@ int __cdecl main(int argc, char **argv)
 
     // Send an initial buffer
     printf("Here: %s\n", sendbuf);
-    iResult = send( ConnectSocket, sendbuf, (int)strlen(sendbuf), 0 );
+    iResult = send( ConnectSocket, &hdr_cfg, (int) sizeof(header_cfg_t), 0 );
     if (iResult == SOCKET_ERROR) {
         printf("send failed with error: %d\n", WSAGetLastError());
         closesocket(ConnectSocket);
@@ -119,7 +143,16 @@ int __cdecl main(int argc, char **argv)
             printf("Connection closed\n");
         else
             printf("recv failed with error: %d\n", WSAGetLastError());
-
+        
+        if(strcmp(recvbuf, "1") == 0) {
+            iResult = send( ConnectSocket, sendbuf, (int) hdr_cfg.buf_len, 0 );
+            if (iResult == SOCKET_ERROR) {
+                printf("send failed with error: %d\n", WSAGetLastError());
+                closesocket(ConnectSocket);
+                WSACleanup();
+                return 1;
+            }
+        }
     } while( iResult > 0 );
 
     // cleanup

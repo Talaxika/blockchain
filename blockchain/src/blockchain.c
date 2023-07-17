@@ -1,4 +1,4 @@
-
+#include "include/connect.h"
 #include "include/blockchain.h"
 
 
@@ -30,26 +30,31 @@ time_t get_timestamp()
     return t;
 }
 
-void add_transaction(Block *block, char* data) {
-    Transaction tx;
+iResult add_transaction(Block *block, header_cfg_t *hdr_cfg, char *data) {
+    iResult iRes = ERROR;
 
-    if (block->num_transactions == 0) {
-        block->transactions = malloc(sizeof(Transaction));
-    } else {
-        block->transactions = realloc(block->transactions,
-            (block->num_transactions + 1) * sizeof(Transaction));
+    transaction_t tx;
+
+    if (block->num_transactions > MAX_TRANSACTIONS_SIZE) {
+        printf("Max transaction size reached.");
+        return iRes;
     }
-
+    
     tx.index = block->num_transactions;
     tx.timestamp = get_timestamp();
     tx.sender = "";
-    tx.amount = data;
+    strncpy(tx.amount, data, MAX_AMOUNT_SIZE);
 
     block->transactions[block->num_transactions] = tx;
     block->num_transactions++;
+
+    iRes = SUCCESS;
+    return iRes;
 }
 
-void add_block(Blockchain *blockchain, Block block) {
+iResult add_block(Blockchain *blockchain, Block block) {
+    iResult iRes = ERROR;
+
     block.index = blockchain->num_blocks;
     block.timestamp = get_timestamp();
 
@@ -61,14 +66,18 @@ void add_block(Blockchain *blockchain, Block block) {
     // generateHash(&block);
     block.hash = "randomhash";
 
-    blockchain->blocks = realloc(blockchain->blocks, (blockchain->num_blocks + 1) * sizeof(Block));
     blockchain->blocks[blockchain->num_blocks] = block;
     blockchain->num_blocks++;
+
+    iRes = SUCCESS;
+    return iRes;
 }
 
-void initiateFirstBlock(Blockchain *chain)
+iResult initiateFirstBlock(Blockchain *chain)
 {
-    Transaction tx =
+    iResult iRes = ERROR;
+
+    transaction_t tx =
     {
         .index = 0,
         .amount = "0",
@@ -83,12 +92,13 @@ void initiateFirstBlock(Blockchain *chain)
         .timestamp = get_timestamp(),
         .hash = "genesisHASH"
     };
-    block.transactions = malloc(sizeof(Transaction));
     block.transactions[0] = tx;
 
-    chain->blocks = malloc(sizeof(Block));
     chain->blocks[0] = block;
     chain->num_blocks = 1;
+
+    iRes = SUCCESS;
+    return iRes;
 }
 
 void print_block(Block block) {

@@ -1,10 +1,6 @@
 #undef UNICODE
 #define WIN32_LEAN_AND_MEAN
 
-#include <windows.h>
-#include <winsock2.h>
-#include <ws2tcpip.h>
-
 #include "include/blockchain.h"
 #include "include/connect.h"
 
@@ -14,32 +10,23 @@
 
 // gcc server.c -o server.exe -lwsock32 -lWs2_32
 
-typedef struct
+iResult connect_open(conn_cfg_t *cfg)
 {
-    /* data */
-} conn_cfg_t;
+    printf("Opened socket");
+    iResult iRes = 0;
+    WSADATA wsaData = {0};
 
-
-char* connect_recieve(void)
-{
-    WSADATA wsaData;
-    int iResult;
-
-    SOCKET ListenSocket = INVALID_SOCKET;
-    SOCKET ClientSocket = INVALID_SOCKET;
-
-    struct addrinfo *result = NULL;
-    struct addrinfo hints;
-
-    int iSendResult;
-    char* recvbuf = malloc(sizeof(char) * DEFAULT_BUFLEN);
-    int recvbuflen = DEFAULT_BUFLEN;
-
+    cfg->result = NULL;
+    cfg->ListenSocket = INVALID_SOCKET;
+    cfg->ClientSocket = INVALID_SOCKET;
+    // struct addrinfo *result = cfg->result;
+    
+    struct addrinfo hints = {0};
     // Initialize Winsock
-    iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
-    if (iResult != 0) {
-        printf("WSAStartup failed with error: %d\n", iResult);
-        return NULL;
+    iRes = WSAStartup(MAKEWORD(2,2), &wsaData);
+    if (iRes != 0) {
+        printf("WSAStartup failed with error: %d\n", iRes);
+        return iRes;
     }
 
     ZeroMemory(&hints, sizeof(hints));
@@ -49,98 +36,118 @@ char* connect_recieve(void)
     hints.ai_flags = AI_PASSIVE;
 
     // Resolve the server address and port
-    iResult = getaddrinfo(NULL, DEFAULT_PORT, &hints, &result);
-    if ( iResult != 0 ) {
-        printf("getaddrinfo failed with error: %d\n", iResult);
+    iRes = getaddrinfo(NULL, DEFAULT_PORT, &hints, &cfg->result);
+    if ( iRes != 0 ) {
+        printf("getaddrinfo failed with error: %d\n", iRes);
         WSACleanup();
-        return NULL;
+        return iRes;
     }
 
     // Create a SOCKET for the server to listen for client connections.
-    ListenSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-    if (ListenSocket == INVALID_SOCKET) {
+    cfg->ListenSocket = socket(cfg->result->ai_family, cfg->result->ai_socktype, cfg->result->ai_protocol);
+    if (cfg->ListenSocket == INVALID_SOCKET) {
         printf("socket failed with error: %d\n", WSAGetLastError());
-        freeaddrinfo(result);
+        freeaddrinfo(cfg->result);
         WSACleanup();
-        return NULL;
+        return iRes;
     }
-
     // Setup the TCP listening socket
-    iResult = bind( ListenSocket, result->ai_addr, (int)result->ai_addrlen);
-    if (iResult == SOCKET_ERROR) {
+    iRes = bind( cfg->ListenSocket, cfg->result->ai_addr, (int)cfg->result->ai_addrlen);
+    if (iRes == SOCKET_ERROR) {
         printf("bind failed with error: %d\n", WSAGetLastError());
-        freeaddrinfo(result);
-        closesocket(ListenSocket);
+        freeaddrinfo(cfg->result);
+        closesocket(cfg->ListenSocket);
         WSACleanup();
-        return NULL;
+        return iRes;
     }
 
-    freeaddrinfo(result);
+    freeaddrinfo(cfg->result);
 
-    iResult = listen(ListenSocket, SOMAXCONN);
-    if (iResult == SOCKET_ERROR) {
+    iRes = listen(cfg->ListenSocket, SOMAXCONN);
+    if (iRes == SOCKET_ERROR) {
         printf("listen failed with error: %d\n", WSAGetLastError());
-        closesocket(ListenSocket);
+        closesocket(cfg->ListenSocket);
         WSACleanup();
-        return NULL;
+        return iRes;
     }
 
     // Accept a client socket
-    ClientSocket = accept(ListenSocket, NULL, NULL);
-    if (ClientSocket == INVALID_SOCKET) {
+    cfg->ClientSocket = accept(cfg->ListenSocket, NULL, NULL);
+    if (cfg->ClientSocket == INVALID_SOCKET) {
         printf("accept failed with error: %d\n", WSAGetLastError());
-        closesocket(ListenSocket);
+        closesocket(cfg->ListenSocket);
         WSACleanup();
-        return NULL;
+        return iRes;
     }
 
     // No longer need server socket
-    closesocket(ListenSocket);
+    closesocket(cfg->ListenSocket);
+    printf("Socket is read to accept");
+    return iRes;
+}
 
+char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg)
+{
+    
+    iResult iRes = 0;    
+    uint32_t iSendResult = 0;
+
+    uint32_t recvbuflen = DEFAULT_BUFLEN;
+    // hdr_cfg->data = malloc(sizeof(char) * recvbuflen);
+
+    char* recv_buffer = malloc(sizeof(char) * DEFAULT_BUFLEN);
     // Receive until the peer shuts down the connection
 
     // TODO: make it that it sends a cfg/header, the this side returns once to tell it to send
     // the whole data
     do {
 
-        iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
-        printf("There: %s\n", recvbuf);
-        if (iResult > 0) {
-            printf("Bytes received: %d\n", iResult);
+        iRes = recv(cfg->ClientSocket, (header_cfg_t*) hdr_cfg, sizeof(header_cfg_t), 0);
+        // printf("There: %s\n", hdr_cfg->data);
+        if (iRes > 0) {
+            printf("Bytes received: %d\n", iRes);
 
         // Echo the buffer back to the sender
-            iSendResult = send( ClientSocket, recvbuf, iResult, 0 );
+            iSendResult = send(cfg->ClientSocket, "1", (int) ANSWER_LENGHT, 0 );
             if (iSendResult == SOCKET_ERROR) {
                 printf("send failed with error: %d\n", WSAGetLastError());
-                closesocket(ClientSocket);
+                closesocket(cfg->ClientSocket);
                 WSACleanup();
                 return NULL;
+            } else {
+                iRes = recv(cfg->ClientSocket, &recv_buffer, hdr_cfg->buf_len, 0);
             }
-            printf("Bytes sent: %d\n", iSendResult);
         }
-        else if (iResult == 0)
+        else if (iRes == 0)
             printf("Connection closing...\n");
         else  {
             printf("recv failed with error: %d\n", WSAGetLastError());
-            closesocket(ClientSocket);
+            closesocket(cfg->ClientSocket);
             WSACleanup();
             return NULL;
         }
 
-    } while (iResult > 0);
+    } while (iRes > 0);
 
-    // shutdown the connection since we're done
-    iResult = shutdown(ClientSocket, SD_SEND);
-    if (iResult == SOCKET_ERROR) {
+    return recv_buffer;
+}
+
+iResult connect_close(conn_cfg_t *cfg)
+{
+    iResult iRes = ERROR;
+
+    // shutdown the connection once we're done
+    iRes = shutdown(cfg->ClientSocket, SD_SEND);
+    if (iRes == SOCKET_ERROR) {
         printf("shutdown failed with error: %d\n", WSAGetLastError());
-        closesocket(ClientSocket);
+        closesocket(cfg->ClientSocket);
         WSACleanup();
-        return NULL;
+        return iRes;
     }
 
     // cleanup
-    closesocket(ClientSocket);
+    closesocket(cfg->ClientSocket);
     WSACleanup();
 
-    return recvbuf;
+    return iRes;
 }

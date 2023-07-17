@@ -1,52 +1,47 @@
 #ifndef BLOCKCHAIN_H
 #define BLOCKCHAIN_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <stdbool.h>
+#include "util.h"
+#include "connect.h"
 
-#define BLOCKCHAIN_SIZE 100
-#define BLOCK_TRANSACTION_SIZE 128
-#define DIFFICULTY 3
-#define MAX_HASH_SIZE 15
+#define BLOCK_TRANSACTION_SIZE (128U)
+#define DIFFICULTY (3U)
+
+#define MAX_BLOCK_SIZE (256U)
+#define MAX_AMOUNT_SIZE (15U)
+#define MAX_HASH_SIZE (15U)
+#define MAX_TRANSACTIONS_SIZE (64U)
 
 typedef char* hash_t;
 
 typedef struct {
-  // public key
-  // sensor id
-} sensor_info_t;
-
-typedef struct {
-  int index;
+  uint32_t index;
   hash_t sender;
-  char* amount;
+  char amount[MAX_AMOUNT_SIZE];
   time_t timestamp;
-} Transaction;
+} transaction_t;
 
 typedef struct {
-  int index;
-  Transaction* transactions;
-  int num_transactions;
+  uint32_t index;
+  transaction_t transactions[MAX_TRANSACTIONS_SIZE];
+  uint32_t num_transactions;
   hash_t prev_hash;
   hash_t hash;
   time_t timestamp;
 } Block;
 
 typedef struct {
-  Block* blocks; // TODO: fixed size because of transfer to another PC
-  int num_blocks;
+  Block blocks[MAX_BLOCK_SIZE];
+  uint32_t num_blocks;
 } Blockchain;
 
 time_t get_timestamp();
 
-void initiateFirstBlock(Blockchain* chain);
+iResult initiateFirstBlock(Blockchain* chain);
 
-void add_block(Blockchain* blockchain, Block block);
+iResult add_block(Blockchain* blockchain, Block block);
 
-void add_transaction(Block* block, char* data);
+iResult add_transaction(Block* block, header_cfg_t *hdr_cfg, char *data);
 
 void print_blockchain(Blockchain chain);
 
