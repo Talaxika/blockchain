@@ -22,8 +22,7 @@ typedef enum
 } DataType;
 
 typedef struct {
-  // public key
-  // sensor id
+    uint32_t sen_id;
 } sensor_info_t;
 
 typedef struct

@@ -6,24 +6,25 @@
 /*==================== Global Variable Declarations ====================*/
 Blockchain b_chain;
 conn_cfg_t iCfg;
+
+/* Make a function pointer so that it's more flexible.
+ * It will be equal to the recv function*/
 char* (*recv_cb)(conn_cfg_t *cfg, header_cfg_t *hdr_cfg);
-transaction_t local_transactions[MAX_TRANSACTIONS_SIZE];
 /*======================================================================*/
 
 /*==================== Global Function Declarations ====================*/
 
 /* Main initializing function.
- *  - Opens the sockets for connection. 
- *  - Initializes the blockchain 
- *  
+ *  - Opens the sockets for connection.
+ *  - Initializes the blockchain
+ *
  **/
 iResult main_init(void);
 
-
 /* Main de-initializing function.
- *  - Closes the sockets. 
- *  - Prints the blockchain 
- *  
+ *  - Closes the sockets.
+ *  - Prints the blockchain
+ *
  **/
 iResult main_deinit(void);
 /*======================================================================*/
@@ -31,18 +32,22 @@ iResult main_deinit(void);
 
 int main() {
 
-    iResult iResult = SUCCESS;
+    iResult iResult = ERROR_RET;
     // Check what is done by other blockchains
     // TODO: if first generate, else wait to recieve BC
     /******SETUP*******/
-    
-    iResult = main_init();
+
+    if((iResult = main_init()) != SUCCESS_RET) {
+        goto MAIN_END;
+    }
 
     char* end = NULL;
-    Block block = {0};
+    block_t block = {0};
 
-    static const Block empty_block = {0};
-     
+    static const block_t empty_block = {0};
+    static const header_cfg_t empty_hdr_cfg = {0};
+    transaction_t local_transactions[MAX_TRANSACTIONS_SIZE] = {0};
+
 
     /* TODO: Make it so that it fills transactions locally, until a block is "solved/generated"
      * Then it puts the transaction array inside the block and then it generates hash of the block
@@ -51,19 +56,32 @@ int main() {
      */
 
     /******Begin processes, each rotation is one block added*******/
-    int rotations = 0;
-    while (rotations < ROTATIONS)
+    uint32_t rotations_TRX = 0;
+    uint32_t rotations_BLK = 0;
+    header_cfg_t iHdr_cfg = {0};
+
+    while (rotations_BLK < ROTATIONS)
     {
-        header_cfg_t iHdr_cfg = {0};
-        char* recv_buff = (*recv_cb)(&iCfg, &iHdr_cfg);
-        add_transaction(&block, &iHdr_cfg, recv_buff);
-        rotations++;
+        memset(&block, 0, sizeof(block));
+        while (rotations_TRX < ROTATIONS)
+        {
+            char* recv_buff = (*recv_cb)(&iCfg, &iHdr_cfg);
+            add_transaction(&block, &iHdr_cfg, recv_buff);
+
+            iHdr_cfg = empty_hdr_cfg;
+            rotations_TRX++;
+        }
+        add_block(&b_chain, block);
+        // empty_transactions(local_transactions, block.num_transactions);
+        memset(local_transactions, 0, sizeof(local_transactions));
+        rotations_BLK++;
     }
+
+
+MAIN_END:
 
     /******Clean up, print, etc...*******/
     // Verify hashes of other blocks
-    add_block(&b_chain, block);
-    
     iResult = main_deinit();
     // periodically write in file
     return 0;
@@ -73,29 +91,34 @@ int main() {
 /*==================== Global Function Definitions ====================*/
 iResult main_init(void)
 {
-    iResult iResult = ERROR;
+    iResult iResult = ERROR_RET;
 
     /* Initiate the genesis block */
-    initiateFirstBlock(&b_chain);
-    
+    if((iResult = initializeFirstBlock(&b_chain)) != SUCCESS_RET) {
+        printf("%s(): Unsuccessful Block initialization", __func__);
+        goto END;
+    }
+
     /* Open the socket and start listening */
-    iResult = connect_open(&iCfg);
-    
-    /* Make a function pointer so that it's more flexible. That is the recv function. */
+    if((iResult = connect_open(&iCfg)) != SUCCESS_RET) {
+        printf("%s(): Unsuccessful Socket initialization", __func__);
+        goto END;
+    }
+    /* That is the recv function. */
     recv_cb = &connect_recieve;
 
-    iResult = SUCCESS;
+END:
     return iResult;
 } /* main_init() */
 
 iResult main_deinit(void)
 {
-    iResult iResult = ERROR;
+    iResult iResult = ERROR_RET;
 
     print_blockchain(b_chain);
     iResult = connect_close(&iCfg);
 
-    iResult = SUCCESS;
+    iResult = SUCCESS_RET;
     return iResult;
 } /* main_deinit() */
 /*=====================================================================*/

@@ -1,7 +1,6 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,9 +10,8 @@
 
 typedef uint32_t iResult;
 
-#define ERROR 1
-#define SUCCESS 0
-
+#define ERROR_RET 1
+#define SUCCESS_RET 0
 
 
 #endif /* UTIL_H */

@@ -8,7 +8,6 @@
 #define DIFFICULTY (3U)
 
 #define MAX_BLOCK_SIZE (256U)
-#define MAX_AMOUNT_SIZE (15U)
 #define MAX_HASH_SIZE (15U)
 #define MAX_TRANSACTIONS_SIZE (64U)
 
@@ -16,8 +15,8 @@ typedef char* hash_t;
 
 typedef struct {
   uint32_t index;
-  hash_t sender;
-  char amount[MAX_AMOUNT_SIZE];
+  uint32_t sender_id;
+  uint32_t amount;
   time_t timestamp;
 } transaction_t;
 
@@ -28,20 +27,28 @@ typedef struct {
   hash_t prev_hash;
   hash_t hash;
   time_t timestamp;
-} Block;
+} block_t;
 
 typedef struct {
-  Block blocks[MAX_BLOCK_SIZE];
+  block_t blocks[MAX_BLOCK_SIZE];
   uint32_t num_blocks;
 } Blockchain;
 
+hash_t getCurrHash(block_t block);
+
+hash_t getPrevHash(block_t block);
+
+uint32_t get_num_len(uint64_t value);
+
 time_t get_timestamp();
 
-iResult initiateFirstBlock(Blockchain* chain);
+iResult y_hash(block_t *block);
 
-iResult add_block(Blockchain* blockchain, Block block);
+iResult initializeFirstBlock(Blockchain *chain);
 
-iResult add_transaction(Block* block, header_cfg_t *hdr_cfg, char *data);
+iResult add_block(Blockchain *blockchain, block_t block);
+
+iResult add_transaction(block_t *block, header_cfg_t *hdr_cfg, char *data);
 
 void print_blockchain(Blockchain chain);
 

@@ -5,22 +5,21 @@
 #include "include/connect.h"
 
 // Need to link with Ws2_32.lib
-#pragma comment (lib, "Ws2_32.lib")
-#pragma comment (lib, "Mswsock.lib")
+// #pragma comment (lib, "Ws2_32.lib")
+// #pragma comment (lib, "Mswsock.lib")
 
 // gcc server.c -o server.exe -lwsock32 -lWs2_32
 
 iResult connect_open(conn_cfg_t *cfg)
 {
-    printf("Opened socket");
-    iResult iRes = 0;
+    iResult iRes = ERROR_RET;
     WSADATA wsaData = {0};
 
     cfg->result = NULL;
     cfg->ListenSocket = INVALID_SOCKET;
     cfg->ClientSocket = INVALID_SOCKET;
     // struct addrinfo *result = cfg->result;
-    
+
     struct addrinfo hints = {0};
     // Initialize Winsock
     iRes = WSAStartup(MAKEWORD(2,2), &wsaData);
@@ -63,12 +62,22 @@ iResult connect_open(conn_cfg_t *cfg)
 
     freeaddrinfo(cfg->result);
 
+    return iRes;
+}
+
+char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg)
+{
+
+    iResult iRes = ERROR_RET;
+    uint32_t iSendResult = 0;
+
+    printf("Socket is ready to accept\n");
     iRes = listen(cfg->ListenSocket, SOMAXCONN);
     if (iRes == SOCKET_ERROR) {
         printf("listen failed with error: %d\n", WSAGetLastError());
         closesocket(cfg->ListenSocket);
         WSACleanup();
-        return iRes;
+        return NULL;
     }
 
     // Accept a client socket
@@ -77,64 +86,60 @@ iResult connect_open(conn_cfg_t *cfg)
         printf("accept failed with error: %d\n", WSAGetLastError());
         closesocket(cfg->ListenSocket);
         WSACleanup();
-        return iRes;
+        return NULL;
     }
 
-    // No longer need server socket
-    closesocket(cfg->ListenSocket);
-    printf("Socket is read to accept");
-    return iRes;
-}
-
-char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg)
-{
-    
-    iResult iRes = 0;    
-    uint32_t iSendResult = 0;
-
-    uint32_t recvbuflen = DEFAULT_BUFLEN;
     // hdr_cfg->data = malloc(sizeof(char) * recvbuflen);
-
-    char* recv_buffer = malloc(sizeof(char) * DEFAULT_BUFLEN);
     // Receive until the peer shuts down the connection
 
     // TODO: make it that it sends a cfg/header, the this side returns once to tell it to send
     // the whole data
-    do {
+    char *recv_buffer = NULL;
 
-        iRes = recv(cfg->ClientSocket, (header_cfg_t*) hdr_cfg, sizeof(header_cfg_t), 0);
-        // printf("There: %s\n", hdr_cfg->data);
-        if (iRes > 0) {
-            printf("Bytes received: %d\n", iRes);
+    /* It is expected to first receive the header configuration which contains the sen info,
+     * the buffer length and info type. */
+    iRes = recv(cfg->ClientSocket, hdr_cfg, sizeof(header_cfg_t), 0);
 
-        // Echo the buffer back to the sender
-            iSendResult = send(cfg->ClientSocket, "1", (int) ANSWER_LENGHT, 0 );
-            if (iSendResult == SOCKET_ERROR) {
-                printf("send failed with error: %d\n", WSAGetLastError());
-                closesocket(cfg->ClientSocket);
-                WSACleanup();
-                return NULL;
-            } else {
-                iRes = recv(cfg->ClientSocket, &recv_buffer, hdr_cfg->buf_len, 0);
-            }
-        }
-        else if (iRes == 0)
-            printf("Connection closing...\n");
-        else  {
-            printf("recv failed with error: %d\n", WSAGetLastError());
+    if (iRes > 0) {
+        printf("Bytes received: %d\n", iRes);
+        printf("buf len: %d sen_id: %d type: %d\n",
+        hdr_cfg->buf_len,
+        hdr_cfg->sen_info.sen_id,
+        hdr_cfg->type);
+
+        /* After the header is received and verified, 1 is echo-ed to the sender, to show him, that
+         * he can send the data. */
+        iSendResult = send(cfg->ClientSocket, "1", (int) ANSWER_LENGHT, 0 );
+        if (iSendResult == SOCKET_ERROR) {
+            printf("send failed with error: %d\n", WSAGetLastError());
             closesocket(cfg->ClientSocket);
             WSACleanup();
             return NULL;
-        }
+        } else {
+            recv_buffer = malloc(sizeof(char) * hdr_cfg->buf_len);
+            iRes = recv(cfg->ClientSocket, recv_buffer, hdr_cfg->buf_len, 0);
 
-    } while (iRes > 0);
+            /* Because the recv function is a byte stream, it does not put the '\0' symbol.
+             * It should be manually put*/
+            recv_buffer[hdr_cfg->buf_len] = '\0';
+        }
+    }
+    else if (iRes == 0)
+        printf("Connection closing...\n");
+    else  {
+        printf("recv failed with error: %d\n", WSAGetLastError());
+        closesocket(cfg->ClientSocket);
+        WSACleanup();
+        return NULL;
+    }
+
 
     return recv_buffer;
 }
 
 iResult connect_close(conn_cfg_t *cfg)
 {
-    iResult iRes = ERROR;
+    iResult iRes = ERROR_RET;
 
     // shutdown the connection once we're done
     iRes = shutdown(cfg->ClientSocket, SD_SEND);
@@ -146,6 +151,7 @@ iResult connect_close(conn_cfg_t *cfg)
     }
 
     // cleanup
+    closesocket(cfg->ListenSocket);
     closesocket(cfg->ClientSocket);
     WSACleanup();
 

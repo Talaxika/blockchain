@@ -57,7 +57,7 @@ int __cdecl main(int argc, char **argv)
     char sendbuf[DEFAULT_BUFLEN] = "";
     snprintf(sendbuf, DEFAULT_BUFLEN, "%d", t);
     hdr_cfg.buf_len = strlen(sendbuf);
-    
+
     char recvbuf[DEFAULT_BUFLEN];
     int iResult;
     int recvbuflen = 1;
@@ -125,25 +125,25 @@ int __cdecl main(int argc, char **argv)
     printf("Bytes Sent: %ld\n", iResult);
 
     // shutdown the connection since no more data will be sent
-    iResult = shutdown(ConnectSocket, SD_SEND);
-    if (iResult == SOCKET_ERROR) {
-        printf("shutdown failed with error: %d\n", WSAGetLastError());
-        closesocket(ConnectSocket);
-        WSACleanup();
-        return 1;
-    }
+    // iResult = shutdown(ConnectSocket, SD_SEND);
+    // if (iResult == SOCKET_ERROR) {
+    //     printf("shutdown failed with error: %d\n", WSAGetLastError());
+    //     closesocket(ConnectSocket);
+    //     WSACleanup();
+    //     return 1;
+    // }
 
     // Receive until the peer closes the connection
-    do {
+
 
         iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
-        if ( iResult > 0 )
+        if ( iResult > 0 ) {
             printf("Bytes received: %d\n", iResult);
-        else if ( iResult == 0 )
+        } else if ( iResult == 0 ) {
             printf("Connection closed\n");
-        else
+        } else {
             printf("recv failed with error: %d\n", WSAGetLastError());
-        
+        }
         if(strcmp(recvbuf, "1") == 0) {
             iResult = send( ConnectSocket, sendbuf, (int) hdr_cfg.buf_len, 0 );
             if (iResult == SOCKET_ERROR) {
@@ -153,7 +153,6 @@ int __cdecl main(int argc, char **argv)
                 return 1;
             }
         }
-    } while( iResult > 0 );
 
     // cleanup
     closesocket(ConnectSocket);
