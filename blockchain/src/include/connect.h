@@ -38,7 +38,7 @@ typedef struct
 
 iResult connect_open(conn_cfg_t *cfg);
 
-char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg);
+char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations);
 
 iResult connect_close(conn_cfg_t *cfg);
 

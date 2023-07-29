@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <stdbool.h>
 #include <stdint.h>
 
 // Need to link with Ws2_32.lib, Mswsock.lib, and Advapi32.lib
@@ -39,13 +40,23 @@ typedef struct
     uint32_t buf_len;
 } header_cfg_t;
 
+typedef struct
+{
+    struct addrinfo *result;
+    SOCKET ConnectSocket;
+} conn_cfg_t;
+
+int connect_open(conn_cfg_t *cfg);
+int conenct_send(conn_cfg_t *cfg);
+int connect_close(conn_cfg_t *cfg);
+
 int __cdecl main(int argc, char **argv)
 {
-    WSADATA wsaData;
-    SOCKET ConnectSocket = INVALID_SOCKET;
-    struct addrinfo *result = NULL,
-                    *ptr = NULL,
-                    hints;
+    conn_cfg_t iCfg = {0};
+    iCfg.ConnectSocket = INVALID_SOCKET;
+    iCfg.result = NULL;
+
+    connect_open(&iCfg);
 
     time_t t;
     time(&t);
@@ -59,9 +70,53 @@ int __cdecl main(int argc, char **argv)
     hdr_cfg.buf_len = strlen(sendbuf);
 
     char recvbuf[DEFAULT_BUFLEN];
-    int iResult;
+    int iResult = 0;
     int recvbuflen = 1;
 
+    while (true)
+    {
+        // Send an initial buffer
+        iResult = send( iCfg.ConnectSocket, &hdr_cfg, (int) sizeof(header_cfg_t), 0 );
+        if (iResult == SOCKET_ERROR) {
+            printf("send failed with error: %d\n", WSAGetLastError());
+            break;
+        }
+
+        printf("Bytes Sent: %ld\n", iResult);
+
+        iResult = recv(iCfg.ConnectSocket, recvbuf, recvbuflen, 0);
+        if ( iResult > 0 ) {
+            printf("Bytes received: %d\n", iResult);
+        } else if ( iResult == 0 ) {
+            printf("Connection closed\n");
+            break;
+        } else {
+            printf("recv failed with error: %d\n", WSAGetLastError());
+            break;
+        }
+        if(strcmp(recvbuf, "1") == 0) {
+            iResult = send( iCfg.ConnectSocket, sendbuf, (int) hdr_cfg.buf_len, 0);
+            if (iResult == SOCKET_ERROR) {
+                printf("send failed with error: %d\n", WSAGetLastError());
+                break;
+            }
+        } else if (strcmp(recvbuf, "2") == 0) {
+            iResult = send( iCfg.ConnectSocket, sendbuf, (int) hdr_cfg.buf_len, 0);
+            break;
+        }
+    }
+
+    connect_close(&iCfg);
+
+    return 0;
+}
+
+int connect_open(conn_cfg_t *cfg)
+{
+    int iResult = 0;
+    WSADATA wsaData = {0};
+    struct addrinfo *ptr = NULL,
+                    hints = {0};
     // Initialize Winsock
     iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
     if (iResult != 0) {
@@ -75,7 +130,7 @@ int __cdecl main(int argc, char **argv)
     hints.ai_protocol = IPPROTO_TCP;
 
     // Resolve the server address and port
-    iResult = getaddrinfo(IP_ADDRESS_LOCALHOST, DEFAULT_PORT, &hints, &result);
+    iResult = getaddrinfo(IP_ADDRESS_LOCALHOST, DEFAULT_PORT, &hints, &cfg->result);
     if ( iResult != 0 ) {
         printf("getaddrinfo failed with error: %d\n", iResult);
         WSACleanup();
@@ -83,79 +138,49 @@ int __cdecl main(int argc, char **argv)
     }
 
     // Attempt to connect to an address until one succeeds
-    for(ptr=result; ptr != NULL ;ptr=ptr->ai_next) {
+    for(ptr=cfg->result; ptr != NULL ;ptr=ptr->ai_next) {
 
         // Create a SOCKET for connecting to server
-        ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype,
+        cfg->ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype,
             ptr->ai_protocol);
-        if (ConnectSocket == INVALID_SOCKET) {
+        if (cfg->ConnectSocket == INVALID_SOCKET) {
             printf("socket failed with error: %ld\n", WSAGetLastError());
             WSACleanup();
             return 1;
         }
 
         // Connect to server.
-        iResult = connect( ConnectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
+        iResult = connect( cfg->ConnectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
         if (iResult == SOCKET_ERROR) {
-            closesocket(ConnectSocket);
-            ConnectSocket = INVALID_SOCKET;
+            closesocket(cfg->ConnectSocket);
+            cfg->ConnectSocket = INVALID_SOCKET;
             continue;
         }
         break;
     }
 
-    freeaddrinfo(result);
+    freeaddrinfo(cfg->result);
 
-    if (ConnectSocket == INVALID_SOCKET) {
+    if (cfg->ConnectSocket == INVALID_SOCKET) {
         printf("Unable to connect to server!\n");
         WSACleanup();
         return 1;
     }
 
-    // Send an initial buffer
-    iResult = send( ConnectSocket, &hdr_cfg, (int) sizeof(header_cfg_t), 0 );
+}
+
+int connect_close(conn_cfg_t *cfg)
+{
+    // shut down the connection, since we are done
+    int iResult = shutdown(cfg->ConnectSocket, SD_SEND);
     if (iResult == SOCKET_ERROR) {
-        printf("send failed with error: %d\n", WSAGetLastError());
-        closesocket(ConnectSocket);
+        printf("shutdown failed with error: %d\n", WSAGetLastError());
+        closesocket(cfg->ConnectSocket);
         WSACleanup();
-        return 1;
+        // return 1;
     }
 
-    printf("Bytes Sent: %ld\n", iResult);
-
-    // shutdown the connection since no more data will be sent
-    // iResult = shutdown(ConnectSocket, SD_SEND);
-    // if (iResult == SOCKET_ERROR) {
-    //     printf("shutdown failed with error: %d\n", WSAGetLastError());
-    //     closesocket(ConnectSocket);
-    //     WSACleanup();
-    //     return 1;
-    // }
-
-    // Receive until the peer closes the connection
-
-
-        iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
-        if ( iResult > 0 ) {
-            printf("Bytes received: %d\n", iResult);
-        } else if ( iResult == 0 ) {
-            printf("Connection closed\n");
-        } else {
-            printf("recv failed with error: %d\n", WSAGetLastError());
-        }
-        if(strcmp(recvbuf, "1") == 0) {
-            iResult = send( ConnectSocket, sendbuf, (int) hdr_cfg.buf_len, 0 );
-            if (iResult == SOCKET_ERROR) {
-                printf("send failed with error: %d\n", WSAGetLastError());
-                closesocket(ConnectSocket);
-                WSACleanup();
-                return 1;
-            }
-        }
-
     // cleanup
-    closesocket(ConnectSocket);
+    closesocket(cfg->ConnectSocket);
     WSACleanup();
-
-    return 0;
 }

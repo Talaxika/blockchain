@@ -10,7 +10,7 @@ conn_cfg_t iCfg;
 
 /* Make a function pointer so that it's more flexible.
  * It will be equal to the recv function*/
-char* (*recv_cb)(conn_cfg_t *cfg, header_cfg_t *hdr_cfg);
+char* (*recv_cb)(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations);
 /*======================================================================*/
 
 /*==================== Global Function Declarations ====================*/
@@ -58,10 +58,10 @@ int main() {
 
     /******Begin processes, each rotation is one block added*******/
     uint32_t rotations_TRX = 0;
-    uint32_t rotations_BLK = 0;
+    uint32_t rotations_BLK = ROTATIONS_BLK;
     header_cfg_t iHdr_cfg = {0};
 
-    while (rotations_BLK < ROTATIONS_BLK)
+    while (rotations_BLK > 0)
     {
         /* HASH 1 = 540805969
          * HASH 2 = 540805971 */
@@ -69,14 +69,14 @@ int main() {
         memset(&local_transactions, 0, sizeof(transaction_t));
         while (rotations_TRX < ROTATIONS_TRX)
         {
-            char* recv_buff = (*recv_cb)(&iCfg, &iHdr_cfg);
+            char* recv_buff = (*recv_cb)(&iCfg, &iHdr_cfg, rotations_BLK);
             add_transaction(&block, &iHdr_cfg, recv_buff);
 
             iHdr_cfg = empty_hdr_cfg;
             rotations_TRX++;
         }
         add_block(&b_chain, block);
-        rotations_BLK++;
+        rotations_BLK--;
         rotations_TRX = 0;
     }
 

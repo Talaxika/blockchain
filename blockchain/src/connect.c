@@ -62,22 +62,13 @@ iResult connect_open(conn_cfg_t *cfg)
 
     freeaddrinfo(cfg->result);
 
-    return iRes;
-}
-
-char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg)
-{
-
-    iResult iRes = ERROR_RET;
-    uint32_t iSendResult = 0;
-
     printf("Socket is ready to accept\n");
     iRes = listen(cfg->ListenSocket, SOMAXCONN);
     if (iRes == SOCKET_ERROR) {
         printf("listen failed with error: %d\n", WSAGetLastError());
         closesocket(cfg->ListenSocket);
         WSACleanup();
-        return NULL;
+        return iRes;
     }
 
     // Accept a client socket
@@ -86,8 +77,18 @@ char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg)
         printf("accept failed with error: %d\n", WSAGetLastError());
         closesocket(cfg->ListenSocket);
         WSACleanup();
-        return NULL;
+        return iRes;
     }
+
+    return iRes;
+}
+
+char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations)
+{
+
+    iResult iRes = ERROR_RET;
+    uint32_t iSendResult = 0;
+
 
     // hdr_cfg->data = malloc(sizeof(char) * recvbuflen);
     // Receive until the peer shuts down the connection
@@ -101,15 +102,21 @@ char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg)
     iRes = recv(cfg->ClientSocket, hdr_cfg, sizeof(header_cfg_t), 0);
 
     if (iRes > 0) {
+
+        char send_char[2] = "1";
         printf("Bytes received: %d\n", iRes);
-        printf("buf len: %d sen_id: %d type: %d\n",
+        printf("Buffer length: %d, Sensor ID: %d, Data Type: %d\n",
         hdr_cfg->buf_len,
         hdr_cfg->sen_info.sen_id,
         hdr_cfg->type);
 
         /* After the header is received and verified, 1 is echo-ed to the sender, to show him, that
          * he can send the data. */
-        iSendResult = send(cfg->ClientSocket, "1", (int) ANSWER_LENGHT, 0 );
+        if (rotations == 1) {
+            strncpy(send_char, "2", 2);
+        }
+
+        iSendResult = send(cfg->ClientSocket, send_char, (int) ANSWER_LENGHT, 0 );
         if (iSendResult == SOCKET_ERROR) {
             printf("send failed with error: %d\n", WSAGetLastError());
             closesocket(cfg->ClientSocket);

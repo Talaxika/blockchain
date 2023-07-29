@@ -48,10 +48,8 @@ iResult y_hash(block_t *block)
         num_hash /= 10;
     }
     num_hash *= MULT_PADDING_VAL;
-    printf("%lld\n", num_hash);
     num_hash += HASH_SPEC_NUM;
     uint32_t num_len = get_num_len(num_hash);
-    printf("%lld\n", num_hash);
     snprintf(block->hash, num_len, "%lld", num_hash);
 
     iRes = SUCCESS_RET;
