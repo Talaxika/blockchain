@@ -21,9 +21,6 @@ typedef enum
 
 } DataType;
 
-typedef struct {
-    uint32_t sen_id;
-} sensor_info_t;
 
 typedef struct
 {

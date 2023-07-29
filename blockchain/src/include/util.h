@@ -8,10 +8,14 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef uint32_t iResult;
-
 #define ERROR_RET 1
 #define SUCCESS_RET 0
+
+typedef uint32_t iResult;
+
+typedef struct {
+    uint32_t sen_id;
+} sensor_info_t;
 
 
 #endif /* UTIL_H */

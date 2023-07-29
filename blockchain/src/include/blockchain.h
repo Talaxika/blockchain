@@ -8,10 +8,9 @@
 #define DIFFICULTY (3U)
 
 #define MAX_BLOCK_SIZE (256U)
-#define MAX_HASH_SIZE (15U)
+#define MAX_HASH_SIZE (20U)
 #define MAX_TRANSACTIONS_SIZE (64U)
 
-typedef char* hash_t;
 
 typedef struct {
   uint32_t index;
@@ -24,8 +23,8 @@ typedef struct {
   uint32_t index;
   transaction_t transactions[MAX_TRANSACTIONS_SIZE];
   uint32_t num_transactions;
-  hash_t prev_hash;
-  hash_t hash;
+  char prev_hash[MAX_HASH_SIZE];
+  char hash[MAX_HASH_SIZE];
   time_t timestamp;
 } block_t;
 
@@ -33,10 +32,6 @@ typedef struct {
   block_t blocks[MAX_BLOCK_SIZE];
   uint32_t num_blocks;
 } Blockchain;
-
-hash_t getCurrHash(block_t block);
-
-hash_t getPrevHash(block_t block);
 
 uint32_t get_num_len(uint64_t value);
 

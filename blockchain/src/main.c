@@ -1,7 +1,8 @@
 #include "include/blockchain.h"
 #include "include/connect.h"
 
-#define ROTATIONS 2
+#define ROTATIONS_BLK (2U)
+#define ROTATIONS_TRX (1U)
 
 /*==================== Global Variable Declarations ====================*/
 Blockchain b_chain;
@@ -60,10 +61,13 @@ int main() {
     uint32_t rotations_BLK = 0;
     header_cfg_t iHdr_cfg = {0};
 
-    while (rotations_BLK < ROTATIONS)
+    while (rotations_BLK < ROTATIONS_BLK)
     {
-        memset(&block, 0, sizeof(block));
-        while (rotations_TRX < ROTATIONS)
+        /* HASH 1 = 540805969
+         * HASH 2 = 540805971 */
+        memset(&block, 0, sizeof(block_t));
+        memset(&local_transactions, 0, sizeof(transaction_t));
+        while (rotations_TRX < ROTATIONS_TRX)
         {
             char* recv_buff = (*recv_cb)(&iCfg, &iHdr_cfg);
             add_transaction(&block, &iHdr_cfg, recv_buff);
@@ -72,9 +76,8 @@ int main() {
             rotations_TRX++;
         }
         add_block(&b_chain, block);
-        // empty_transactions(local_transactions, block.num_transactions);
-        memset(local_transactions, 0, sizeof(local_transactions));
         rotations_BLK++;
+        rotations_TRX = 0;
     }
 
 

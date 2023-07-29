@@ -1,16 +1,9 @@
 #include "include/connect.h"
 #include "include/blockchain.h"
 
-#define HASH_SHIFT_VAL (4U)
-
-hash_t getCurrHash(block_t block)
-{
-    return block.hash;
-}
-hash_t getPrevHash(block_t block)
-{
-    return block.prev_hash;
-}
+#define UINT64_MAXVAL    (18446744073709551615U)
+#define MULT_PADDING_VAL (10000U)
+#define HASH_SPEC_NUM    (2206U)
 
 time_t get_timestamp()
 {
@@ -37,10 +30,7 @@ iResult y_hash(block_t *block)
 {
     iResult iRes = ERROR_RET;
     uint64_t num_hash = 0;
-    uint32_t y = 2206;
-
-    if (block->num_transactions != 0)
-    {
+    if (block->num_transactions != 0) {
         for (int i = 0; i < block->num_transactions; i++)
         {
             num_hash += (block->transactions[i].amount + block->transactions[i].timestamp);
@@ -49,18 +39,19 @@ iResult y_hash(block_t *block)
         num_hash += block->index;
     }
 
-    /* No matter what the resulting number is, it is shifted to left by 4 to add 0 zeroes at the end
-     * of the number, which then is added with the 'y' number. That way, the block is always
+    /* which then is added with the 'y' number. That way, the block is always
      * appended this number at the end, which can be used for verification. */
-    uint32_t num_len = get_num_len(num_hash);
-    uint32_t shift_val = 0;
 
-    if (num_len > MAX_HASH_SIZE + HASH_SHIFT_VAL) {
-        shift_val = num_len - MAX_HASH_SIZE + HASH_SHIFT_VAL;
+
+    /* if num_hash * MULT_PADDING would overflow */
+    while (num_hash > UINT64_MAXVAL / MULT_PADDING_VAL) {
+        num_hash /= 10;
     }
-
-    num_hash = (num_hash >> shift_val) << HASH_SHIFT_VAL;
-    num_hash += y;
+    num_hash *= MULT_PADDING_VAL;
+    printf("%lld\n", num_hash);
+    num_hash += HASH_SPEC_NUM;
+    uint32_t num_len = get_num_len(num_hash);
+    printf("%lld\n", num_hash);
     snprintf(block->hash, num_len, "%lld", num_hash);
 
     iRes = SUCCESS_RET;
@@ -102,11 +93,10 @@ iResult add_block(Blockchain *blockchain, block_t block) {
     y_hash(&block);
     block.index = blockchain->num_blocks;
     block.timestamp = get_timestamp();
-    memcpy(block.prev_hash, previous_block.hash, MAX_HASH_SIZE);
+    strncpy(block.prev_hash, previous_block.hash, MAX_HASH_SIZE);
 
     blockchain->blocks[blockchain->num_blocks] = block;
     blockchain->num_blocks++;
-
     iRes = SUCCESS_RET;
     return iRes;
 }
@@ -126,7 +116,7 @@ iResult initializeFirstBlock(Blockchain *chain)
     block_t block =
     {
         .index = 0,
-        .prev_hash = NULL,
+        .prev_hash = {0},
         .timestamp = get_timestamp(),
         .hash = "genesisHASH"
     };

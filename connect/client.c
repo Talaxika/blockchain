@@ -113,7 +113,6 @@ int __cdecl main(int argc, char **argv)
     }
 
     // Send an initial buffer
-    printf("Here: %s\n", sendbuf);
     iResult = send( ConnectSocket, &hdr_cfg, (int) sizeof(header_cfg_t), 0 );
     if (iResult == SOCKET_ERROR) {
         printf("send failed with error: %d\n", WSAGetLastError());
