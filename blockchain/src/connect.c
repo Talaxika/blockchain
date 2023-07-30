@@ -12,7 +12,7 @@
 
 iResult connect_open(conn_cfg_t *cfg)
 {
-    iResult iRes = ERROR_RET;
+    iResult iRes = RET_CODE_ERROR;
     WSADATA wsaData = {0};
 
     /* Prepare configuration */
@@ -56,8 +56,7 @@ iResult connect_open(conn_cfg_t *cfg)
     if (iRes == SOCKET_ERROR) {
         printf("bind failed with error: %d\n", WSAGetLastError());
         freeaddrinfo(cfg->result);
-        closesocket(cfg->ListenSocket);
-        WSACleanup();
+        connect_close(cfg);
         return iRes;
     }
 
@@ -67,8 +66,7 @@ iResult connect_open(conn_cfg_t *cfg)
     iRes = listen(cfg->ListenSocket, SOMAXCONN);
     if (iRes == SOCKET_ERROR) {
         printf("listen failed with error: %d\n", WSAGetLastError());
-        closesocket(cfg->ListenSocket);
-        WSACleanup();
+        connect_close(cfg);
         return iRes;
     }
 
@@ -76,8 +74,7 @@ iResult connect_open(conn_cfg_t *cfg)
     cfg->ClientSocket = accept(cfg->ListenSocket, NULL, NULL);
     if (cfg->ClientSocket == INVALID_SOCKET) {
         printf("accept failed with error: %d\n", WSAGetLastError());
-        closesocket(cfg->ListenSocket);
-        WSACleanup();
+        connect_close(cfg);
         return iRes;
     }
 
@@ -87,7 +84,7 @@ iResult connect_open(conn_cfg_t *cfg)
 char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations)
 {
 
-    iResult iRes = ERROR_RET;
+    iResult iRes = RET_CODE_ERROR;
     uint32_t iSendResult = 0;
 
     char *recv_buffer = NULL;
@@ -114,8 +111,7 @@ char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations
         iSendResult = send(cfg->ClientSocket, send_char, (int) ANSWER_LENGHT, 0 );
         if (iSendResult == SOCKET_ERROR) {
             printf("send failed with error: %d\n", WSAGetLastError());
-            closesocket(cfg->ClientSocket);
-            WSACleanup();
+            connect_close(cfg);
             return NULL;
         } else {
             recv_buffer = malloc(sizeof(char) * hdr_cfg->buf_len);
@@ -130,8 +126,7 @@ char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations
         printf("Connection closing...\n");
     else  {
         printf("recv failed with error: %d\n", WSAGetLastError());
-        closesocket(cfg->ClientSocket);
-        WSACleanup();
+        connect_close(cfg);
         return NULL;
     }
 
@@ -141,21 +136,30 @@ char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations
 
 iResult connect_close(conn_cfg_t *cfg)
 {
-    iResult iRes = ERROR_RET;
+    iResult iRes = RET_CODE_ERROR;
 
     // shutdown the connection once we're done
     iRes = shutdown(cfg->ClientSocket, SD_SEND);
     if (iRes == SOCKET_ERROR) {
         printf("shutdown failed with error: %d\n", WSAGetLastError());
-        closesocket(cfg->ClientSocket);
-        WSACleanup();
-        return iRes;
     }
 
     // cleanup
-    closesocket(cfg->ListenSocket);
-    closesocket(cfg->ClientSocket);
-    WSACleanup();
+    iRes = closesocket(cfg->ListenSocket);
+    if (iRes == SOCKET_ERROR) {
+        printf("Closing listening socket failed with error: %d\n", WSAGetLastError());
+    }
+
+    iRes = closesocket(cfg->ClientSocket);
+    if (iRes == SOCKET_ERROR) {
+        printf("Closing client socket failed with error: %d\n", WSAGetLastError());
+    }
+
+    /* Terminates Windows Sockets operations for all threads */
+    iRes = WSACleanup();
+    if (iRes == SOCKET_ERROR) {
+        printf("WSACleanup failed with error: %d\n", WSAGetLastError());
+    }
 
     return iRes;
 }

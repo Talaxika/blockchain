@@ -44,7 +44,7 @@ uint32_t get_num_len(uint64_t value)
 /* Hashing function used for block hash generation. */
 iResult y_hash(block_t *block)
 {
-    iResult iRes = ERROR_RET;
+    iResult iRes = RET_CODE_ERROR;
     uint64_t num_hash = 0;
     if (block->num_transactions != 0) {
         for (int i = 0; i < block->num_transactions; i++)
@@ -68,13 +68,13 @@ iResult y_hash(block_t *block)
     uint32_t num_len = get_num_len(num_hash);
     snprintf(block->hash, num_len, "%lld", num_hash);
 
-    iRes = SUCCESS_RET;
+    iRes = RET_CODE_SUCCESS;
     return iRes;
 }
 
 iResult add_transaction(block_t *block, header_cfg_t *hdr_cfg, char *data)
 {
-    iResult iRes = ERROR_RET;
+    iResult iRes = RET_CODE_ERROR;
 
     transaction_t tx = {0};
     char *end = NULL;
@@ -92,12 +92,12 @@ iResult add_transaction(block_t *block, header_cfg_t *hdr_cfg, char *data)
     block->transactions[block->num_transactions] = tx;
     block->num_transactions++;
 
-    iRes = SUCCESS_RET;
+    iRes = RET_CODE_SUCCESS;
     return iRes;
 }
 
 iResult add_block(Blockchain *blockchain, block_t block) {
-    iResult iRes = ERROR_RET;
+    iResult iRes = RET_CODE_ERROR;
 
     block_t previous_block = blockchain->blocks[blockchain->num_blocks - 1];
 
@@ -111,14 +111,14 @@ iResult add_block(Blockchain *blockchain, block_t block) {
 
     blockchain->blocks[blockchain->num_blocks] = block;
     blockchain->num_blocks++;
-    iRes = SUCCESS_RET;
+    iRes = RET_CODE_SUCCESS;
     return iRes;
 }
 
 
 iResult initializeFirstBlock(Blockchain *chain)
 {
-    iResult iRes = ERROR_RET;
+    iResult iRes = RET_CODE_ERROR;
 
     transaction_t tx =
     {
@@ -140,7 +140,7 @@ iResult initializeFirstBlock(Blockchain *chain)
     chain->blocks[0] = block;
     chain->num_blocks = 1;
 
-    iRes = SUCCESS_RET;
+    iRes = RET_CODE_SUCCESS;
     return iRes;
 }
 

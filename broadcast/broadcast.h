@@ -11,8 +11,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define ERROR_RET 1
-#define SUCCESS_RET 0
+#define RET_CODE_ERROR 1
+#define RET_CODE_SUCCESS 0
 
 typedef uint32_t iResult;
 

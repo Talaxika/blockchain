@@ -20,25 +20,25 @@ char* (*recv_cb)(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations);
  *  - Initializes the blockchain
  *
  **/
-iResult main_init(void);
+iResult main_open(void);
 
 /* Main de-initializing function.
  *  - Closes the sockets.
  *  - Prints the blockchain
  *
  **/
-iResult main_deinit(void);
+iResult main_close(void);
 /*======================================================================*/
 
 
 int main(int argc, char* argv[]) {
 
-    iResult iResult = ERROR_RET;
+    iResult iResult = RET_CODE_ERROR;
     // Check what is done by other blockchains
     // TODO: if first generate, else wait to recieve BC
     /******SETUP*******/
 
-    if((iResult = main_init()) != SUCCESS_RET) {
+    if((iResult = main_open()) != RET_CODE_SUCCESS) {
         goto MAIN_END;
     }
 
@@ -85,25 +85,25 @@ MAIN_END:
 
     /******Clean up, print, etc...*******/
     // Verify hashes of other blocks
-    iResult = main_deinit();
+    iResult = main_close();
     // periodically write in file
     return 0;
 } /* main() */
 
 
 /*==================== Global Function Definitions ====================*/
-iResult main_init(void)
+iResult main_open(void)
 {
-    iResult iResult = ERROR_RET;
+    iResult iResult = RET_CODE_ERROR;
 
     /* Initiate the genesis block */
-    if((iResult = initializeFirstBlock(&b_chain)) != SUCCESS_RET) {
+    if((iResult = initializeFirstBlock(&b_chain)) != RET_CODE_SUCCESS) {
         printf("%s(): Unsuccessful Block initialization", __func__);
         goto END;
     }
 
     /* Open the socket and start listening */
-    if((iResult = connect_open(&iCfg)) != SUCCESS_RET) {
+    if((iResult = connect_open(&iCfg)) != RET_CODE_SUCCESS) {
         printf("%s(): Unsuccessful Socket initialization", __func__);
         goto END;
     }
@@ -112,16 +112,18 @@ iResult main_init(void)
 
 END:
     return iResult;
-} /* main_init() */
+} /* main_open() */
 
-iResult main_deinit(void)
+iResult main_close(void)
 {
-    iResult iResult = ERROR_RET;
+    iResult iResult = RET_CODE_ERROR;
 
     print_blockchain(b_chain);
+
+    /* Shutdown connections, close existing sockets */
     iResult = connect_close(&iCfg);
 
-    iResult = SUCCESS_RET;
+    iResult = RET_CODE_SUCCESS;
     return iResult;
-} /* main_deinit() */
+} /* main_close() */
 /*=====================================================================*/

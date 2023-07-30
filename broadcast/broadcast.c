@@ -11,7 +11,7 @@
 
 iResult connect_open(conn_cfg_t *cfg)
 {
-    iResult iRes = ERROR_RET;
+    iResult iRes = RET_CODE_ERROR;
     WSADATA wsaData = {0};
 
     /* Prepare configuration */
@@ -71,7 +71,7 @@ iResult connect_open(conn_cfg_t *cfg)
 char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations)
 {
 
-    iResult iRes = ERROR_RET;
+    iResult iRes = RET_CODE_ERROR;
     uint32_t iSendResult = 0;
 
 
@@ -131,7 +131,7 @@ char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations
 
 iResult connect_close(conn_cfg_t *cfg)
 {
-    iResult iRes = ERROR_RET;
+    iResult iRes = RET_CODE_ERROR;
 
     // shutdown the connection once we're done
     iRes = shutdown(cfg->ClientSocket, SD_SEND);
