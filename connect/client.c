@@ -20,6 +20,7 @@
 #define DEFAULT_PORT "27015"
 #define IP_ADDRESS_LOCALHOST "localhost"
 #define IP_ADDRESS_IPv4 "192.168.1.6"
+#define SLEEP_MILLISECONDS (1000U)
 
 typedef enum
 {
@@ -56,25 +57,24 @@ int __cdecl main(int argc, char **argv)
     iCfg.ConnectSocket = INVALID_SOCKET;
     iCfg.result = NULL;
 
-    connect_open(&iCfg);
-
-    time_t t;
-    time(&t);
-
     header_cfg_t hdr_cfg = {0};
     hdr_cfg.type = TYPE_INT;
     hdr_cfg.sen_info.sen_id = 111;
-
-    char sendbuf[DEFAULT_BUFLEN] = "";
-    snprintf(sendbuf, DEFAULT_BUFLEN, "%d", t);
-    hdr_cfg.buf_len = strlen(sendbuf);
 
     char recvbuf[DEFAULT_BUFLEN];
     int iResult = 0;
     int recvbuflen = 1;
 
+    connect_open(&iCfg);
+
     while (true)
     {
+        time_t t = 0;
+        time(&t);
+        char sendbuf[DEFAULT_BUFLEN] = "";
+        snprintf(sendbuf, DEFAULT_BUFLEN, "%d", t);
+        hdr_cfg.buf_len = strlen(sendbuf);
+
         // Send an initial buffer
         iResult = send( iCfg.ConnectSocket, &hdr_cfg, (int) sizeof(header_cfg_t), 0 );
         if (iResult == SOCKET_ERROR) {
@@ -104,6 +104,8 @@ int __cdecl main(int argc, char **argv)
             iResult = send( iCfg.ConnectSocket, sendbuf, (int) hdr_cfg.buf_len, 0);
             break;
         }
+        /* I think it is better to use threads and sleep them, but not necessary here */
+        Sleep(SLEEP_MILLISECONDS);
     }
 
     connect_close(&iCfg);

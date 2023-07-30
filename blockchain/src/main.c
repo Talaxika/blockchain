@@ -2,7 +2,7 @@
 #include "include/connect.h"
 
 #define ROTATIONS_BLK (2U)
-#define ROTATIONS_TRX (1U)
+#define ROTATIONS_TRX (3U)
 
 /*==================== Global Variable Declarations ====================*/
 Blockchain b_chain;
@@ -31,7 +31,7 @@ iResult main_deinit(void);
 /*======================================================================*/
 
 
-int main() {
+int main(int argc, char* argv[]) {
 
     iResult iResult = ERROR_RET;
     // Check what is done by other blockchains

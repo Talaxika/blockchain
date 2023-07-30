@@ -1,8 +1,7 @@
 #undef UNICODE
 #define WIN32_LEAN_AND_MEAN
 
-#include "include/blockchain.h"
-#include "include/connect.h"
+#include "broadcast.h"
 
 // Need to link with Ws2_32.lib
 // #pragma comment (lib, "Ws2_32.lib")
@@ -31,8 +30,8 @@ iResult connect_open(conn_cfg_t *cfg)
     struct addrinfo hints = {0};
     ZeroMemory(&hints, sizeof(hints));
     hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_socktype = SOCK_RAW;
+    hints.ai_protocol = IPPROTO_UDP;
     hints.ai_flags = AI_PASSIVE;
 
     // Resolve the server address and port
@@ -44,13 +43,14 @@ iResult connect_open(conn_cfg_t *cfg)
     }
 
     // Create a SOCKET for the server to listen for client connections.
-    cfg->ListenSocket = socket(cfg->result->ai_family, cfg->result->ai_socktype, cfg->result->ai_protocol);
+    cfg->ListenSocket = WSASocket(AF_INET, SOCK_RAW, IPPROTO_UDP, NULL, 0, 0);
     if (cfg->ListenSocket == INVALID_SOCKET) {
         printf("socket failed with error: %d\n", WSAGetLastError());
         freeaddrinfo(cfg->result);
         WSACleanup();
         return iRes;
     }
+
     // Setup the TCP listening socket
     iRes = bind( cfg->ListenSocket, cfg->result->ai_addr, (int)cfg->result->ai_addrlen);
     if (iRes == SOCKET_ERROR) {
@@ -64,22 +64,6 @@ iResult connect_open(conn_cfg_t *cfg)
     freeaddrinfo(cfg->result);
 
     printf("Socket is ready to accept\n");
-    iRes = listen(cfg->ListenSocket, SOMAXCONN);
-    if (iRes == SOCKET_ERROR) {
-        printf("listen failed with error: %d\n", WSAGetLastError());
-        closesocket(cfg->ListenSocket);
-        WSACleanup();
-        return iRes;
-    }
-
-    // Accept a client socket
-    cfg->ClientSocket = accept(cfg->ListenSocket, NULL, NULL);
-    if (cfg->ClientSocket == INVALID_SOCKET) {
-        printf("accept failed with error: %d\n", WSAGetLastError());
-        closesocket(cfg->ListenSocket);
-        WSACleanup();
-        return iRes;
-    }
 
     return iRes;
 }
@@ -90,6 +74,12 @@ char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations
     iResult iRes = ERROR_RET;
     uint32_t iSendResult = 0;
 
+
+    // hdr_cfg->data = malloc(sizeof(char) * recvbuflen);
+    // Receive until the peer shuts down the connection
+
+    // TODO: make it that it sends a cfg/header, the this side returns once to tell it to send
+    // the whole data
     char *recv_buffer = NULL;
 
     /* It is expected to first receive the header configuration which contains the sen info,
@@ -158,4 +148,10 @@ iResult connect_close(conn_cfg_t *cfg)
     WSACleanup();
 
     return iRes;
+}
+
+int main(void) {
+    conn_cfg_t iCfg = {0};
+    connect_open(&iCfg);
+
 }

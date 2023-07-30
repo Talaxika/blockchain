@@ -1,5 +1,6 @@
 #include "include/connect.h"
 #include "include/blockchain.h"
+#include "include/sha256.h"
 
 #define UINT64_MAXVAL    (18446744073709551615U)
 #define MULT_PADDING_VAL (10000U)
@@ -24,6 +25,21 @@ uint32_t get_num_len(uint64_t value)
 
     return l;
 }
+
+// /* */
+// iResult nonce_search(block_t *block) {
+//     uint8_t block_hash[32];
+
+//     for (uint32_t i = 0; i < UINT32_MAX; ++i)
+//     {
+//         block->nonce = i;
+//         calc_sha_256(block_hash, block, sizeof(block_header_t));
+
+//         if (memcmp(block_hash, target, sizeof(block_hash)) < 0)
+//             /* we found a good hash */
+//             return;
+//     }
+// }
 
 /* Hashing function used for block hash generation. */
 iResult y_hash(block_t *block)
@@ -98,6 +114,7 @@ iResult add_block(Blockchain *blockchain, block_t block) {
     iRes = SUCCESS_RET;
     return iRes;
 }
+
 
 iResult initializeFirstBlock(Blockchain *chain)
 {

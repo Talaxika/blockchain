@@ -26,6 +26,9 @@ typedef struct {
   char prev_hash[MAX_HASH_SIZE];
   char hash[MAX_HASH_SIZE];
   time_t timestamp;
+
+  /* This is adjusted to make the hash of this header fall in the valid range. */
+  uint32_t nonce;
 } block_t;
 
 typedef struct {
