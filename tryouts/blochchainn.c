@@ -72,7 +72,7 @@ block_header_t build_block(const block_header_t* previous, const char* contents,
         /* genesis has no previous. just use zeroed hash */
         memset(header.previous_hash, 0, sizeof(header.previous_hash));
     }
-    
+
     /* add data hash */
     calc_sha_256(header.contents_hash, contents, length);
     return header;
@@ -137,11 +137,6 @@ int main(int argc, const char* argv[])
 
 #define CHUNK_SIZE 64
 #define TOTAL_LEN_LEN 8
-
-/*
- * Comments from pseudo-code at https://en.wikipedia.org/wiki/SHA-2 are reproduced here.
- * When useful for clarification, portions of the pseudo-code are reproduced here too.
- */
 
 /*
  * Initialize array of round constants:

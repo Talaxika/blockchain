@@ -7,11 +7,6 @@
 #define TOTAL_LEN_LEN 8
 
 /*
- * Comments from pseudo-code at https://en.wikipedia.org/wiki/SHA-2 are reproduced here.
- * When useful for clarification, portions of the pseudo-code are reproduced here too.
- */
-
-/*
  * Initialize array of round constants:
  * (first 32 bits of the fractional parts of the cube roots of the first 64 primes 2..311):
  */
@@ -111,11 +106,8 @@ static int calc_chunk(uint8_t chunk[CHUNK_SIZE], struct buffer_state * state)
 
 /*
  * Limitations:
- * - Since input is a pointer in RAM, the data to hash should be in RAM, which could be a problem
- *   for large data sizes.
- * - SHA algorithms theoretically operate on bit strings. However, this implementation has no support
- *   for bit string lengths that are not multiples of eight, and it really operates on arrays of bytes.
- *   In particular, the len parameter is a number of bytes.
+ * - Since input is a pointer in RAM, the data to hash should be in RAM, which could be a problem for large data sizes.
+ * - SHA algorithms theoretically operate on bit strings. However, this implementation has no support for bit string lengths that are not multiples of eight, and it really operates on arrays of bytes. In particular, the len parameter is a number of bytes.
  */
 void calc_sha_256(uint8_t hash[32], const void * input, size_t len)
 {
@@ -144,7 +136,7 @@ void calc_sha_256(uint8_t hash[32], const void * input, size_t len)
 
 	while (calc_chunk(chunk, &state)) {
 		uint32_t ah[8];
-		
+
 		/*
 		 * create a 64-entry message schedule array w[0..63] of 32-bit words
 		 * (The initial values in w[0..63] don't matter, so many implementations zero them here)

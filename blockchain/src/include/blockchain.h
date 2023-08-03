@@ -11,7 +11,6 @@
 #define MAX_HASH_SIZE (20U)
 #define MAX_TRANSACTIONS_SIZE (64U)
 
-
 typedef struct {
   uint32_t index;
   uint32_t sender_id;
@@ -23,8 +22,8 @@ typedef struct {
   uint32_t index;
   transaction_t transactions[MAX_TRANSACTIONS_SIZE];
   uint32_t num_transactions;
-  char prev_hash[MAX_HASH_SIZE];
-  char hash[MAX_HASH_SIZE];
+  uint8_t current_hash[32];
+  uint8_t previous_hash[32];
   time_t timestamp;
 
   /* This is adjusted to make the hash of this header fall in the valid range. */

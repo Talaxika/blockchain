@@ -13,65 +13,6 @@ time_t get_timestamp()
     return t;
 }
 
-uint32_t get_num_len(uint64_t value)
-{
-    uint32_t l=1;
-
-    while(value > 9)
-    {
-        l++;
-        value/=10;
-    }
-
-    return l;
-}
-
-// /* */
-// iResult nonce_search(block_t *block) {
-//     uint8_t block_hash[32];
-
-//     for (uint32_t i = 0; i < UINT32_MAX; ++i)
-//     {
-//         block->nonce = i;
-//         calc_sha_256(block_hash, block, sizeof(block_header_t));
-
-//         if (memcmp(block_hash, target, sizeof(block_hash)) < 0)
-//             /* we found a good hash */
-//             return;
-//     }
-// }
-
-/* Hashing function used for block hash generation. */
-iResult y_hash(block_t *block)
-{
-    iResult iRes = RET_CODE_ERROR;
-    uint64_t num_hash = 0;
-    if (block->num_transactions != 0) {
-        for (int i = 0; i < block->num_transactions; i++)
-        {
-            num_hash += (block->transactions[i].amount + block->transactions[i].timestamp);
-        }
-        num_hash /= block->num_transactions;
-        num_hash += block->index;
-    }
-
-    /* which then is added with the 'y' number. That way, the block is always
-     * appended this number at the end, which can be used for verification. */
-
-
-    /* if num_hash * MULT_PADDING would overflow */
-    while (num_hash > UINT64_MAXVAL / MULT_PADDING_VAL) {
-        num_hash /= 10;
-    }
-    num_hash *= MULT_PADDING_VAL;
-    num_hash += HASH_SPEC_NUM;
-    uint32_t num_len = get_num_len(num_hash);
-    snprintf(block->hash, num_len, "%lld", num_hash);
-
-    iRes = RET_CODE_SUCCESS;
-    return iRes;
-}
-
 iResult add_transaction(block_t *block, header_cfg_t *hdr_cfg, char *data)
 {
     iResult iRes = RET_CODE_ERROR;
