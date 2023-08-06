@@ -63,6 +63,7 @@ iResult build_block(Blockchain *blockchain)
 iResult mine_block(block_t *block, const uint8_t* target)
 {
     iResult iRes = RET_CODE_ERROR;
+    uint64_t input = 0;
 
     // while (true)
     // {

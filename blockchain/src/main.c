@@ -126,6 +126,7 @@ int main(int argc, char* argv[]) {
         // printf("%d", GetLastError());
         iBlockchain.num_blocks++;
         rotations_BLK--;
+        Sleep(2000);
     }
 #endif
 

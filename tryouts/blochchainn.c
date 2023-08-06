@@ -9,6 +9,8 @@
 
 #define LINE_MAX 4096
 
+void calc_sha_256(uint8_t hash[32], const void * input, size_t len);
+
 void fprint_hash(FILE* f, uint8_t* hash)
 {
     fprintf(f, "0x");
@@ -82,7 +84,7 @@ block_header_t build_block(const block_header_t* previous, const char* contents,
    I chose this target because it works well on my computer.
    Feel free to try out others. */
 
-void calc_sha_256(uint8_t hash[32], const void * input, size_t len);
+
 
 uint8_t target[32];
 
