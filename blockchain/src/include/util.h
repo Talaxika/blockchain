@@ -11,6 +11,8 @@
 #define RET_CODE_ERROR 1
 #define RET_CODE_SUCCESS 0
 
+#define MAX_HASH_SIZE (32U)
+
 typedef uint32_t iResult;
 
 typedef long unsigned int iResult_thread;

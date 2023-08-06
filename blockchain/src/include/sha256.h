@@ -1,10 +1,8 @@
 #ifndef SHA_256_H
 #define SHA_256_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
+#include "util.h"
 
-void calc_sha_256(uint8_t hash[32], const void *input, size_t len);
+uint8_t* calc_sha_256(uint8_t hash[MAX_HASH_SIZE], void *input, size_t len);
 
 #endif

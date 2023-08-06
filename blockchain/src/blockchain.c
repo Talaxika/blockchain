@@ -12,6 +12,7 @@ time_t get_timestamp()
     time(&t);
     return t;
 }
+
 uint32_t get_num_len(uint64_t value)
 {
     uint32_t l=1;
@@ -28,55 +29,76 @@ uint32_t get_num_len(uint64_t value)
 void fprint_hash(FILE* f, uint8_t* hash)
 {
     fprintf(f, "0x");
-    for (int i = 0; i < 32; ++i)
+    for (int i = 0; i < MAX_HASH_SIZE; ++i)
         fprintf(f, "%02x", hash[i]);
+    fprintf(f, "\n");
 }
 
-block_t build_block(const block_t* previous)
+iResult build_block(Blockchain *blockchain)
 {
-    block_t block;
-    block.timestamp = (uint64_t)time(NULL);
-    block.contents_length = get_num_len(block.timestamp);
+    block_t prev_block = blockchain->blocks[blockchain->num_blocks-1];
 
-    if (previous)
-    {
-        /* calculate previous block hash */
-        calc_sha_256(block.previous_hash, previous, sizeof(block_t));
-    }
-    else
-    {
-        /* genesis has no previous. just use zeroed hash */
-        memset(block.previous_hash, 0, sizeof(block.previous_hash));
-    }
+    blockchain->blocks[blockchain->num_blocks].index = blockchain->num_blocks;
+    blockchain->blocks[blockchain->num_blocks].timestamp = get_timestamp();
 
-    /* add data hash */
-    calc_sha_256(block.current_hash, block.timestamp, block.contents_length);
-    return block;
+    uint64_t input = prev_block.timestamp + prev_block.nonce;
+
+    /* calculate previous block hash */
+    for (int i = 0; i < MAX_HASH_SIZE; i++)
+    {
+        blockchain->blocks[blockchain->num_blocks].previous_hash[i] = prev_block.current_hash[i];
+    }
+    
+    memcpy(blockchain->blocks[blockchain->num_blocks].previous_hash,
+            calc_sha_256(blockchain->blocks[blockchain->num_blocks].previous_hash, &input, prev_block.contents_length),
+            sizeof(prev_block.current_hash));
+    printf("From Build block:   ");
+    fprint_hash(stdout, blockchain->blocks[blockchain->num_blocks].previous_hash);
+    // if (memcmp(current_block.previous_hash, prev_block.current_hash , MAX_HASH_SIZE) != 0) {
+    //     printf("Hash verification error at block number: %d", current_block.index);
+    // }
+
+
+    // printf("block.prev_hash:");
+    // fprint_hash(stdout, prev_block.previous_hash);
+
+    return RET_CODE_SUCCESS;
 }
 
 iResult mine_block(block_t *block, const uint8_t* target)
 {
     iResult iRes = RET_CODE_ERROR;
+    uint64_t input = 0;
 
-    while (iRes != RET_CODE_SUCCESS)
-    {
+    // while (true)
+    // {
         /* MINING: start of the mining round */
 
         /* adjust the nonce until the block header is < the target hash */
-        uint8_t block_hash[32] = {0};
 
-        for (uint32_t i = 0; i < UINT32_MAX; ++i)
-        {
-            block->nonce = i;
-            calc_sha_256(block_hash, block, sizeof(block_t));
+        // for (uint32_t i = 0; i < UINT32_MAX; ++i)
+        // {
 
-            if (memcmp(block_hash, target, sizeof(block_hash)) < 0)
-                /* we found a good hash */
-                iRes = RET_CODE_SUCCESS;
-        }
+            block->nonce = rand();
+            input = block->nonce + block->timestamp;
+            block->contents_length = get_num_len(input);
+            printf("From Mine block:   ");
+            memcpy(block->current_hash, calc_sha_256(block->current_hash, &input, block->contents_length), MAX_HASH_SIZE);
+            fprint_hash(stdout, block->current_hash);
+
+            // if (memcmp(block->current_hash, target, sizeof(block->current_hash)) < 0) {
+
+                // if (memcmp(block->previous_hash, block->current_hash, MAX_HASH_SIZE) != 0) {
+                //     /* we found a good hash */
+                //     iRes = RET_CODE_SUCCESS;
+                //     return iRes;
+                // }
+            // }
+        // }
         /* The uint32 expired without finding a valid hash.
            Restart the time, and hope that this time + nonce combo works. */
-    }
+    // }
+
     iRes = RET_CODE_ERROR;
     return iRes;
 }
@@ -84,12 +106,12 @@ iResult mine_block(block_t *block, const uint8_t* target)
 iResult add_transaction(block_t *block, header_cfg_t *hdr_cfg, char *data)
 {
     iResult iRes = RET_CODE_ERROR;
-
+    printf("num_transactions: %d\n", block->num_transactions);
     transaction_t tx = {0};
     char *end = NULL;
 
     if (block->num_transactions > MAX_TRANSACTIONS_SIZE) {
-        printf("Max transaction size reached.");
+        printf("Max transaction size reached.\n");
         return iRes;
     }
 
@@ -105,43 +127,24 @@ iResult add_transaction(block_t *block, header_cfg_t *hdr_cfg, char *data)
     return iRes;
 }
 
-iResult add_block(Blockchain *blockchain, block_t block) {
-    iResult iRes = RET_CODE_ERROR;
-
-    block_t previous_block = blockchain->blocks[blockchain->num_blocks - 1];
-
-    /* Number of transactions and the transactions themselves are added
-     * before the add_block function. */
-
-    block.index = blockchain->num_blocks;
-
-    blockchain->blocks[blockchain->num_blocks] = block;
-    blockchain->num_blocks++;
-    iRes = RET_CODE_SUCCESS;
-    return iRes;
-}
-
-
 iResult initializeFirstBlock(Blockchain *chain)
 {
     iResult iRes = RET_CODE_ERROR;
+    chain->blocks[0].index = 0;
+    chain->blocks[0].timestamp = get_timestamp();
+    chain->blocks[0].num_transactions = 1;
+    chain->blocks[0].transactions[0].index = 0;
+    chain->blocks[0].transactions[0].amount = 0;
+    chain->blocks[0].transactions[0].sender_id = 0;
+    chain->blocks[0].transactions[0].timestamp = get_timestamp();
 
-    transaction_t tx =
-    {
-        .index = 0,
-        .amount = 0,
-        .sender_id = 0,
-        .timestamp = get_timestamp()
-    };
+    uint8_t target[MAX_HASH_SIZE] = {0};
+    target[2] = 0x01;
 
-    block_t block =
-    {
-        .index = 0,
-        .timestamp = get_timestamp(),
-    };
-    block.transactions[0] = tx;
-
-    chain->blocks[0] = block;
+    /* con_len, hash and nonce is generated from mining */
+    mine_block(&chain->blocks[0], target);
+    memset(chain->blocks[0].previous_hash, 0, sizeof(chain->blocks[0].previous_hash));
+    // memcpy(block.current_hash, calc_sha_256(block.current_hash, &block.timestamp, block.contents_length), MAX_HASH_SIZE);
     chain->num_blocks = 1;
 
     iRes = RET_CODE_SUCCESS;
@@ -150,12 +153,19 @@ iResult initializeFirstBlock(Blockchain *chain)
 
 void print_block(block_t block) {
     printf("Block %d:\n", block.index);
-    printf("  Timestamp: %s", ctime(&block.timestamp));
+    printf("  Timestamp: %lld\n", block.timestamp);
+
+    printf("  Previous hash:");
     fprint_hash(stdout, block.previous_hash);
+
+    printf("  Current hash:");
     fprint_hash(stdout, block.current_hash);
+
+    printf("  Contents_length: %d\n", block.contents_length);
+    printf("  Nonce: %d\n", block.nonce);
+    printf("  Transactions: %d\n", block.num_transactions);
     for (int i = 0; i <  block.num_transactions; i++)
     {
-        printf("  Transactions:\n");
         printf("    Index: %d\n", block.transactions[i].index);
         printf("    Sender_id: %d\n", block.transactions[i].sender_id);
         printf("    Amount: %d\n", block.transactions[i].amount);
