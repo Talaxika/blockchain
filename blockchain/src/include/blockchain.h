@@ -8,8 +8,8 @@
 #define DIFFICULTY (3U)
 
 #define MAX_BLOCK_SIZE (256U)
-#define MAX_HASH_SIZE (20U)
 #define MAX_TRANSACTIONS_SIZE (64U)
+#define HASH_SIZE_BYTES (8U * 32U)
 
 typedef struct {
   uint32_t index;
@@ -23,8 +23,8 @@ typedef struct {
   transaction_t transactions[MAX_TRANSACTIONS_SIZE];
   uint32_t num_transactions;
 
-  uint8_t current_hash[32];
-  uint8_t previous_hash[32];
+  uint8_t current_hash[MAX_HASH_SIZE];
+  uint8_t previous_hash[MAX_HASH_SIZE];
   time_t timestamp;
 
   /* This is adjusted to make the hash of this header fall in the valid range. */
@@ -43,9 +43,7 @@ void fprint_hash(FILE* f, uint8_t* hash);
 
 iResult initializeFirstBlock(Blockchain *chain);
 
-iResult add_block(Blockchain *blockchain, block_t block);
-
-block_t build_block(const block_t* previous);
+iResult build_block(Blockchain *chain);
 
 iResult mine_block(block_t *block, const uint8_t* target);
 

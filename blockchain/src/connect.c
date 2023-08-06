@@ -83,7 +83,6 @@ iResult connect_open(conn_cfg_t *cfg)
 
 char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations)
 {
-
     iResult iRes = RET_CODE_ERROR;
     uint32_t iSendResult = 0;
 
@@ -107,7 +106,7 @@ char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations
         if (rotations == 1) {
             strncpy(send_char, "2", 2);
         }
-
+        printf("Sending answer: %s\n", send_char);
         iSendResult = send(cfg->ClientSocket, send_char, (int) ANSWER_LENGHT, 0 );
         if (iSendResult == SOCKET_ERROR) {
             printf("send failed with error: %d\n", WSAGetLastError());
@@ -120,6 +119,7 @@ char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations
             /* Because the recv function is a byte stream, it does not put the '\0' symbol.
              * It should be manually put*/
             recv_buffer[hdr_cfg->buf_len] = '\0';
+            printf("Bytes received: %d, Data received: %s\n", iRes, recv_buffer);
         }
     }
     else if (iRes == 0)

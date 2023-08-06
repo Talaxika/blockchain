@@ -6,6 +6,14 @@
 #define CHUNK_SIZE 64
 #define TOTAL_LEN_LEN 8
 
+void fprint_hash_2(FILE* f, uint8_t* hash)
+{
+    fprintf(f, "0x");
+    for (int i = 0; i < MAX_HASH_SIZE; ++i)
+        fprintf(f, "%02x", hash[i]);
+    fprintf(f, "\n");
+}
+
 /*
  * Initialize array of round constants:
  * (first 32 bits of the fractional parts of the cube roots of the first 64 primes 2..311):
@@ -22,7 +30,7 @@ static const uint32_t k[] = {
 };
 
 struct buffer_state {
-	const uint8_t * p;
+	const uint8_t *p;
 	size_t len;
 	size_t total_len;
 	int single_one_delivered; /* bool */
@@ -35,10 +43,10 @@ static inline uint32_t right_rot(uint32_t value, unsigned int count)
 	 * Defined behaviour in standard C for all count where 0 < count < 32,
 	 * which is what we need here.
 	 */
-	return value >> count | value << (32 - count);
+	return value >> count | value << (MAX_HASH_SIZE - count);
 }
 
-static void init_buf_state(struct buffer_state * state, const void * input, size_t len)
+static void init_buf_state(struct buffer_state *state, void *input, size_t len)
 {
 	state->p = input;
 	state->len = len;
@@ -109,7 +117,7 @@ static int calc_chunk(uint8_t chunk[CHUNK_SIZE], struct buffer_state * state)
  * - Since input is a pointer in RAM, the data to hash should be in RAM, which could be a problem for large data sizes.
  * - SHA algorithms theoretically operate on bit strings. However, this implementation has no support for bit string lengths that are not multiples of eight, and it really operates on arrays of bytes. In particular, the len parameter is a number of bytes.
  */
-void calc_sha_256(uint8_t hash[32], const void * input, size_t len)
+uint8_t* calc_sha_256(uint8_t hash[MAX_HASH_SIZE], void *input, size_t len)
 {
 	/*
 	 * Note 1: All integers (expect indexes) are 32-bit unsigned integers and addition is calculated modulo 2^32.
@@ -194,4 +202,6 @@ void calc_sha_256(uint8_t hash[32], const void * input, size_t len)
 		hash[j++] = (uint8_t) (h[i] >> 8);
 		hash[j++] = (uint8_t) h[i];
 	}
+
+	return hash;
 }
