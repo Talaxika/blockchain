@@ -2,14 +2,12 @@
 #include "include/connect.h"
 #include "include/sha256.h"
 
-#define ROTATIONS_BLK (3U)
-#define ROTATIONS_TRX (3U)
+#define ROTATIONS_BLK (2U)
+#define ROTATIONS_TRX (2U)
 
-// #define USE_CONNECTION
-
-#if 1
+#define USE_CONNECTION
 #define USE_MINING
-#endif
+
 /*=========================== Local Typedefs ===========================*/
 /*======================================================================*/
 
@@ -86,11 +84,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    /* too hard?: try target[2] = 0xFF
-       too easy?: try target[2] = 0x01 */
-
-    char* end = NULL;
-
     /* TODO: Make it so that it fills transactions locally, until a block is "solved/generated"
      * Then it puts the transaction array inside the block and then it generates hash of the block
      * based on the transactions or sth.
@@ -111,22 +104,21 @@ int main(int argc, char* argv[]) {
                 printf("CreateThread error: %d\n", GetLastError());
                 return 1;
             }
+
 #ifdef USE_CONNECTION
-                thread_recv = CreateThread(NULL, 0, main_recv, NULL, 0, NULL);
+            thread_recv = CreateThread(NULL, 0, main_recv, NULL, 0, NULL);
 
-
-                if (thread_recv == NULL || thread_recv == INVALID_HANDLE_VALUE) {
-                    printf("CreateThread error: %d\n", GetLastError());
-                    return 1;
-                }
-                WaitForSingleObject(thread_recv, INFINITE);
-                // printf("%d", GetLastError());
+            if (thread_recv == NULL || thread_recv == INVALID_HANDLE_VALUE) {
+                printf("CreateThread error: %d\n", GetLastError());
+                return 1;
+            }
+            WaitForSingleObject(thread_recv, INFINITE);
+            // printf("%d", GetLastError());
 #endif
         } while (WaitForSingleObject(thread_calc, INFINITE));
         // printf("%d", GetLastError());
         iBlockchain.num_blocks++;
         rotations_BLK--;
-        Sleep(2000);
     }
 #endif
 
@@ -157,13 +149,13 @@ iResult main_open(void)
         printf("%s(): Unsuccessful Socket initialization", __func__);
         goto END;
     }
-    /* That is the recv function. */
-    recv_cb = &connect_recieve;
 #endif /* USE_CONNECTION */
 
 END:
     return iResult;
 } /* main_open() */
+
+
 
 #ifdef USE_CONNECTION
 iResult_thread main_recv(void *)
@@ -172,39 +164,35 @@ iResult_thread main_recv(void *)
 
     printf("Started connection operation\n");
 
-    uint32_t dwCount=0, dwWaitResult = 0;
-    while( dwCount < 20 )
-    {
-        dwWaitResult = WaitForSingleObject(mutex_recv, INFINITE);
+    // uint32_t dwCount=0, dwWaitResult = 0;
+    // dwWaitResult = WaitForSingleObject(mutex_recv, INFINITE);
+    // switch (dwWaitResult)
+    // {
+    //     // The thread got ownership of the mutex
+    //     case WAIT_OBJECT_0:
 
-        switch (dwWaitResult)
-        {
-            // The thread got ownership of the mutex
-            case WAIT_OBJECT_0:
+            header_cfg_t iHdr_cfg = {0};
+            uint32_t rotations_TRX = ROTATIONS_TRX;
+            memset(&local_transactions, 0, sizeof(transaction_t));
 
-                header_cfg_t iHdr_cfg = {0};
-                uint32_t rotations_TRX = ROTATIONS_TRX;
-                memset(&local_transactions, 0, sizeof(transaction_t));
+            while (rotations_TRX > 0)
+            {
+                char* recv_buff = connect_recieve(&iCfg, &iHdr_cfg, rotations_TRX);
+                // printf("%s", recv_buff);
+                add_transaction(&iBlockchain.blocks[iBlockchain.num_blocks], &iHdr_cfg, recv_buff);
 
-                while (rotations_TRX > 0)
-                {
-                    char* recv_buff = (*recv_cb)(&iCfg, &iHdr_cfg, rotations_TRX);
-                    // printf("%s", recv_buff);
-                    add_transaction(&iBlockchain.blocks[iBlockchain.num_blocks + 1], &iHdr_cfg, recv_buff);
+                rotations_TRX--;
+            }
+    //         if (! ReleaseMutex(mutex_recv))
+    //         {
+    //             // Handle error.
+    //         }
+    //         break;
 
-                    rotations_TRX--;
-                }
-                if (! ReleaseMutex(mutex_recv))
-                {
-                    // Handle error.
-                }
-                break;
-
-            // The thread got ownership of an abandoned mutex
-            case WAIT_ABANDONED:
-                return FALSE;
-        }
-    }
+    //     // The thread got ownership of an abandoned mutex
+    //     case WAIT_ABANDONED:
+    //         return FALSE;
+    // }
     printf("Done connection operation\n");
     return iRes;
 } /* main_recv() */
@@ -215,15 +203,11 @@ iResult_thread main_mine(void *)
 {
     iResult_thread iRes = RET_CODE_SUCCESS;
     printf("Started mining operation\n");
-    uint8_t target[MAX_HASH_SIZE] = {0};
+    Sleep(SLEEP_TIME);
 
-    /* too hard?: try target[2] = 0xFF
-       too easy?: try target[2] = 0x01 */
-    target[2] = 0x0FF;
-
-    build_block(&iBlockchain);
-    iRes = mine_block(&iBlockchain.blocks[iBlockchain.num_blocks], target);
-    Sleep(5000);
+    build_and_verify_block(&iBlockchain);
+    iRes = mine_block(&iBlockchain.blocks[iBlockchain.num_blocks]);
+    
     printf("Done mining operation\n");
     return iRes;
 } /* main_mine() */

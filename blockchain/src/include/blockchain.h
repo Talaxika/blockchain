@@ -5,11 +5,11 @@
 #include "connect.h"
 
 #define BLOCK_TRANSACTION_SIZE (128U)
-#define DIFFICULTY (3U)
 
 #define MAX_BLOCK_SIZE (256U)
 #define MAX_TRANSACTIONS_SIZE (64U)
-#define HASH_SIZE_BYTES (8U * 32U)
+
+#define SLEEP_TIME  (7000U)
 
 typedef struct {
   uint32_t index;
@@ -23,13 +23,11 @@ typedef struct {
   transaction_t transactions[MAX_TRANSACTIONS_SIZE];
   uint32_t num_transactions;
 
-  uint8_t current_hash[MAX_HASH_SIZE];
-  uint8_t previous_hash[MAX_HASH_SIZE];
+  uint64_t current_hash;
+  uint64_t previous_hash;
   time_t timestamp;
 
-  /* This is adjusted to make the hash of this header fall in the valid range. */
-  uint32_t contents_length;
-  uint32_t nonce;
+  uint64_t nonce;
 } block_t;
 
 typedef struct {
@@ -43,9 +41,9 @@ void fprint_hash(FILE* f, uint8_t* hash);
 
 iResult initializeFirstBlock(Blockchain *chain);
 
-iResult build_block(Blockchain *chain);
+iResult build_and_verify_block(Blockchain *chain);
 
-iResult mine_block(block_t *block, const uint8_t* target);
+iResult mine_block(block_t *block);
 
 iResult add_transaction(block_t *block, header_cfg_t *hdr_cfg, char *data);
 

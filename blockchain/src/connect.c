@@ -62,7 +62,6 @@ iResult connect_open(conn_cfg_t *cfg)
 
     freeaddrinfo(cfg->result);
 
-    printf("Socket is ready to accept\n");
     iRes = listen(cfg->ListenSocket, SOMAXCONN);
     if (iRes == SOCKET_ERROR) {
         printf("listen failed with error: %d\n", WSAGetLastError());
@@ -70,13 +69,7 @@ iResult connect_open(conn_cfg_t *cfg)
         return iRes;
     }
 
-    // Accept a client socket
-    cfg->ClientSocket = accept(cfg->ListenSocket, NULL, NULL);
-    if (cfg->ClientSocket == INVALID_SOCKET) {
-        printf("accept failed with error: %d\n", WSAGetLastError());
-        connect_close(cfg);
-        return iRes;
-    }
+    printf("Waiting for connections...\n");
 
     return iRes;
 }
@@ -87,6 +80,15 @@ char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations
     uint32_t iSendResult = 0;
 
     char *recv_buffer = NULL;
+
+    // Accept a client socket
+    cfg->ClientSocket = accept(cfg->ListenSocket, NULL, NULL);
+    if (cfg->ClientSocket == INVALID_SOCKET) {
+        printf("accept failed with error: %d\n", WSAGetLastError());
+        connect_close(cfg);
+        return iRes;
+    }
+    printf("Socket accepted\n");
 
     /* It is expected to first receive the header configuration which contains the sen info,
      * the buffer length and info type. */
@@ -110,6 +112,7 @@ char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations
         iSendResult = send(cfg->ClientSocket, send_char, (int) ANSWER_LENGHT, 0 );
         if (iSendResult == SOCKET_ERROR) {
             printf("send failed with error: %d\n", WSAGetLastError());
+            closesocket(cfg->ClientSocket);
             connect_close(cfg);
             return NULL;
         } else {
@@ -126,11 +129,19 @@ char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations
         printf("Connection closing...\n");
     else  {
         printf("recv failed with error: %d\n", WSAGetLastError());
+        closesocket(cfg->ClientSocket);
         connect_close(cfg);
         return NULL;
     }
 
-
+    int iResult = shutdown(cfg->ClientSocket, SD_SEND);
+    if (iResult == SOCKET_ERROR) {
+        printf("shutdown failed with error: %d\n", WSAGetLastError());
+        closesocket(cfg->ClientSocket);
+        WSACleanup();
+        // return 1;
+    }
+    closesocket(cfg->ClientSocket);
     return recv_buffer;
 }
 
@@ -138,21 +149,10 @@ iResult connect_close(conn_cfg_t *cfg)
 {
     iResult iRes = RET_CODE_ERROR;
 
-    // shutdown the connection once we're done
-    iRes = shutdown(cfg->ClientSocket, SD_SEND);
-    if (iRes == SOCKET_ERROR) {
-        printf("shutdown failed with error: %d\n", WSAGetLastError());
-    }
-
     // cleanup
     iRes = closesocket(cfg->ListenSocket);
     if (iRes == SOCKET_ERROR) {
         printf("Closing listening socket failed with error: %d\n", WSAGetLastError());
-    }
-
-    iRes = closesocket(cfg->ClientSocket);
-    if (iRes == SOCKET_ERROR) {
-        printf("Closing client socket failed with error: %d\n", WSAGetLastError());
     }
 
     /* Terminates Windows Sockets operations for all threads */
