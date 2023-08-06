@@ -172,7 +172,7 @@ void BounceProc(void* pMyID)
         }
     }
     // Repeat while RunMutex is still taken.
-    while (WaitForSingleObject(hRunMutex, 75L) == WAIT_TIMEOUT);
+    while (WaitForSingleObject(hRunMutex, 15L) == WAIT_TIMEOUT);
 }
 
 void WriteTitle(int ThreadNum)

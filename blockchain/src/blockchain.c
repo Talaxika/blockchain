@@ -48,7 +48,7 @@ block_t build_block(const block_t* previous)
         /* genesis has no previous. just use zeroed hash */
         memset(block.previous_hash, 0, sizeof(block.previous_hash));
     }
-    
+
     /* add data hash */
     calc_sha_256(block.current_hash, block.timestamp, block.contents_length);
     return block;

@@ -23,7 +23,6 @@ typedef struct {
   transaction_t transactions[MAX_TRANSACTIONS_SIZE];
   uint32_t num_transactions;
 
-
   uint8_t current_hash[32];
   uint8_t previous_hash[32];
   time_t timestamp;
