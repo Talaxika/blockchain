@@ -12,7 +12,6 @@
 
 #define DEFAULT_PORT "27015"
 
-
 typedef enum
 {
     TYPE_CHAR,   /** val=1 **/

@@ -10,5 +10,4 @@
 
 #define MAX_THREADS  32
 
-
 #endif /* THREADS_H */

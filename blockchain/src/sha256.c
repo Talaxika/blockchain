@@ -144,7 +144,6 @@ void calc_sha_256(uint8_t hash[32], const void * input, size_t len)
 
 	while (calc_chunk(chunk, &state)) {
 		uint32_t ah[8];
-		
 		/*
 		 * create a 64-entry message schedule array w[0..63] of 32-bit words
 		 * (The initial values in w[0..63] don't matter, so many implementations zero them here)

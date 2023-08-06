@@ -12,7 +12,6 @@ time_t get_timestamp()
     time(&t);
     return t;
 }
-
 uint32_t get_num_len(uint64_t value)
 {
     uint32_t l=1;
@@ -26,49 +25,59 @@ uint32_t get_num_len(uint64_t value)
     return l;
 }
 
-// /* */
-// iResult nonce_search(block_t *block) {
-//     uint8_t block_hash[32];
+void fprint_hash(FILE* f, uint8_t* hash)
+{
+    fprintf(f, "0x");
+    for (int i = 0; i < 32; ++i)
+        fprintf(f, "%02x", hash[i]);
+}
 
-//     for (uint32_t i = 0; i < UINT32_MAX; ++i)
-//     {
-//         block->nonce = i;
-//         calc_sha_256(block_hash, block, sizeof(block_header_t));
+block_t build_block(const block_t* previous)
+{
+    block_t block;
+    block.timestamp = (uint64_t)time(NULL);
+    block.contents_length = get_num_len(block.timestamp);
 
-//         if (memcmp(block_hash, target, sizeof(block_hash)) < 0)
-//             /* we found a good hash */
-//             return;
-//     }
-// }
+    if (previous)
+    {
+        /* calculate previous block hash */
+        calc_sha_256(block.previous_hash, previous, sizeof(block_t));
+    }
+    else
+    {
+        /* genesis has no previous. just use zeroed hash */
+        memset(block.previous_hash, 0, sizeof(block.previous_hash));
+    }
+    
+    /* add data hash */
+    calc_sha_256(block.current_hash, block.timestamp, block.contents_length);
+    return block;
+}
 
-/* Hashing function used for block hash generation. */
-iResult y_hash(block_t *block)
+iResult mine_block(block_t *block, const uint8_t* target)
 {
     iResult iRes = RET_CODE_ERROR;
-    uint64_t num_hash = 0;
-    if (block->num_transactions != 0) {
-        for (int i = 0; i < block->num_transactions; i++)
+
+    while (iRes != RET_CODE_SUCCESS)
+    {
+        /* MINING: start of the mining round */
+
+        /* adjust the nonce until the block header is < the target hash */
+        uint8_t block_hash[32] = {0};
+
+        for (uint32_t i = 0; i < UINT32_MAX; ++i)
         {
-            num_hash += (block->transactions[i].amount + block->transactions[i].timestamp);
+            block->nonce = i;
+            calc_sha_256(block_hash, block, sizeof(block_t));
+
+            if (memcmp(block_hash, target, sizeof(block_hash)) < 0)
+                /* we found a good hash */
+                iRes = RET_CODE_SUCCESS;
         }
-        num_hash /= block->num_transactions;
-        num_hash += block->index;
+        /* The uint32 expired without finding a valid hash.
+           Restart the time, and hope that this time + nonce combo works. */
     }
-
-    /* which then is added with the 'y' number. That way, the block is always
-     * appended this number at the end, which can be used for verification. */
-
-
-    /* if num_hash * MULT_PADDING would overflow */
-    while (num_hash > UINT64_MAXVAL / MULT_PADDING_VAL) {
-        num_hash /= 10;
-    }
-    num_hash *= MULT_PADDING_VAL;
-    num_hash += HASH_SPEC_NUM;
-    uint32_t num_len = get_num_len(num_hash);
-    snprintf(block->hash, num_len, "%lld", num_hash);
-
-    iRes = RET_CODE_SUCCESS;
+    iRes = RET_CODE_ERROR;
     return iRes;
 }
 
@@ -104,10 +113,7 @@ iResult add_block(Blockchain *blockchain, block_t block) {
     /* Number of transactions and the transactions themselves are added
      * before the add_block function. */
 
-    y_hash(&block);
     block.index = blockchain->num_blocks;
-    block.timestamp = get_timestamp();
-    strncpy(block.prev_hash, previous_block.hash, MAX_HASH_SIZE);
 
     blockchain->blocks[blockchain->num_blocks] = block;
     blockchain->num_blocks++;
@@ -131,9 +137,7 @@ iResult initializeFirstBlock(Blockchain *chain)
     block_t block =
     {
         .index = 0,
-        .prev_hash = {0},
         .timestamp = get_timestamp(),
-        .hash = "genesisHASH"
     };
     block.transactions[0] = tx;
 
@@ -147,8 +151,8 @@ iResult initializeFirstBlock(Blockchain *chain)
 void print_block(block_t block) {
     printf("Block %d:\n", block.index);
     printf("  Timestamp: %s", ctime(&block.timestamp));
-    printf("  Prev Hash: %s\n", block.prev_hash);
-    printf("  Hash: %s\n", block.hash);
+    fprint_hash(stdout, block.previous_hash);
+    fprint_hash(stdout, block.current_hash);
     for (int i = 0; i <  block.num_transactions; i++)
     {
         printf("  Transactions:\n");

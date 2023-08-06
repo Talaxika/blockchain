@@ -13,6 +13,8 @@
 
 typedef uint32_t iResult;
 
+typedef long unsigned int iResult_thread;
+
 typedef struct {
     uint32_t sen_id;
 } sensor_info_t;
