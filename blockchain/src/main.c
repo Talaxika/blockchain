@@ -1,6 +1,7 @@
 #include "include/blockchain.h"
 #include "include/connect.h"
 #include "include/sha256.h"
+#include "include/fileIO.h"
 
 #define ROTATIONS_BLK (2U)
 #define ROTATIONS_TRX (2U)
@@ -164,6 +165,8 @@ iResult_thread main_recv(void *)
 
     printf("Started connection operation\n");
 
+    /* TODO: make threads accept and handle clients, the mutex should be used there */
+
     // uint32_t dwCount=0, dwWaitResult = 0;
     // dwWaitResult = WaitForSingleObject(mutex_recv, INFINITE);
     // switch (dwWaitResult)
@@ -171,18 +174,17 @@ iResult_thread main_recv(void *)
     //     // The thread got ownership of the mutex
     //     case WAIT_OBJECT_0:
 
-            header_cfg_t iHdr_cfg = {0};
-            uint32_t rotations_TRX = ROTATIONS_TRX;
-            memset(&local_transactions, 0, sizeof(transaction_t));
+    header_cfg_t iHdr_cfg = {0};
+    uint32_t rotations_TRX = ROTATIONS_TRX;
+    memset(&local_transactions, 0, sizeof(transaction_t));
 
-            while (rotations_TRX > 0)
-            {
-                char* recv_buff = connect_recieve(&iCfg, &iHdr_cfg, rotations_TRX);
-                // printf("%s", recv_buff);
-                add_transaction(&iBlockchain.blocks[iBlockchain.num_blocks], &iHdr_cfg, recv_buff);
+    while (rotations_TRX > 0)
+    {
+        char* recv_buff = connect_recieve(&iCfg, &iHdr_cfg, rotations_TRX);
+        add_transaction(&iBlockchain.blocks[iBlockchain.num_blocks], &iHdr_cfg, recv_buff);
 
-                rotations_TRX--;
-            }
+        rotations_TRX--;
+    }
     //         if (! ReleaseMutex(mutex_recv))
     //         {
     //             // Handle error.
@@ -219,6 +221,7 @@ iResult main_close(void)
 
 #if 1
     print_blockchain(iBlockchain);
+    write_to_file(iBlockchain);
 #endif
 
     CloseHandle(thread_calc);

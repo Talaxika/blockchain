@@ -40,7 +40,6 @@ uint64_t hash(uint64_t input) {
     return hash;
 }
 
-
 iResult build_and_verify_block(Blockchain *blockchain)
 {
     block_t curr_block = blockchain->blocks[blockchain->num_blocks];

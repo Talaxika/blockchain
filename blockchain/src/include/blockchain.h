@@ -37,8 +37,6 @@ typedef struct {
 
 time_t get_timestamp();
 
-void fprint_hash(FILE* f, uint8_t* hash);
-
 iResult initializeFirstBlock(Blockchain *chain);
 
 iResult build_and_verify_block(Blockchain *chain);

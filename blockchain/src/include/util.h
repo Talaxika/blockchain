@@ -7,6 +7,9 @@
 #include <time.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <winsock2.h>
+#include <windows.h>
+#include <ws2tcpip.h>
 
 #define RET_CODE_ERROR 1
 #define RET_CODE_SUCCESS 0

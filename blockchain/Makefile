@@ -1,7 +1,7 @@
 exec = run.exe
 sources = $(wildcard src/*.c)
 objects = $(sources:.c=.o)
-flags = -g -Wall -lm -fPIC -lwsock32 -lWs2_32
+flags = -g -Wall -lm -fPIC -lwsock32 -lWs2_32 -lkernel32
 
 
 $(exec): $(objects)

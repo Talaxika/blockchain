@@ -86,7 +86,7 @@ char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations
     if (cfg->ClientSocket == INVALID_SOCKET) {
         printf("accept failed with error: %d\n", WSAGetLastError());
         connect_close(cfg);
-        return iRes;
+        return NULL;
     }
     printf("Socket accepted\n");
 
@@ -134,8 +134,8 @@ char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations
         return NULL;
     }
 
-    int iResult = shutdown(cfg->ClientSocket, SD_SEND);
-    if (iResult == SOCKET_ERROR) {
+    iRes = shutdown(cfg->ClientSocket, SD_SEND);
+    if (iRes == SOCKET_ERROR) {
         printf("shutdown failed with error: %d\n", WSAGetLastError());
         closesocket(cfg->ClientSocket);
         WSACleanup();

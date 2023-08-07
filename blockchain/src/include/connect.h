@@ -1,10 +1,6 @@
 #ifndef CONNECT_H
 #define CONNECT_H
 
-#include <winsock2.h>
-#include <windows.h>
-#include <ws2tcpip.h>
-
 #include "util.h"
 
 #define DEFAULT_BUFLEN 16
