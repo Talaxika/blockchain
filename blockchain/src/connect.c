@@ -177,7 +177,11 @@ iResult send_broadcast_message(Blockchain *blockchain)
 
     SOCKET sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sockfd == INVALID_SOCKET) {
+<<<<<<< HEAD
         fprintf(stderr, "socket failed with error: %d\n", WSAGetLastError());
+=======
+        fprintf(stderr, "socket failed with error: %ld\n", WSAGetLastError());
+>>>>>>> aae2e82782c63bc35c774ca4f0d2b6305b9d7433
         WSACleanup();
         iRes = RET_CODE_ERROR;
         return iRes;
@@ -186,7 +190,11 @@ iResult send_broadcast_message(Blockchain *blockchain)
     bool broadcastEnable = TRUE;
     iRes = setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, (const char *)&broadcastEnable, sizeof(broadcastEnable));
     if (iRes == SOCKET_ERROR) {
+<<<<<<< HEAD
         fprintf(stderr, "setsockopt failed with error: %d\n", WSAGetLastError());
+=======
+        fprintf(stderr, "setsockopt failed with error: %ld\n", WSAGetLastError());
+>>>>>>> aae2e82782c63bc35c774ca4f0d2b6305b9d7433
         closesocket(sockfd);
         WSACleanup();
         return iRes;
