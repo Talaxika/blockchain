@@ -6,8 +6,8 @@
 #define ROTATIONS_BLK (2U)
 #define ROTATIONS_TRX (2U)
 
-#define USE_CONNECTION
-#define USE_MINING
+// #define USE_CONNECTION
+// #define USE_MINING
 
 /*=========================== Local Typedefs ===========================*/
 /*======================================================================*/
@@ -322,6 +322,12 @@ iResult start_upd_broadcast_listener()
             return 1;
         } else {
             iRes = sendto(sockfd, &iBlockchain, send_size, 0, (struct sockaddr *)&clientAddr, sizeof(clientAddr));
+            if (iRes == SOCKET_ERROR) {
+                fprintf(stderr, "sendto failed with error: %ld\n", WSAGetLastError());
+                closesocket(sockfd);
+                WSACleanup();
+                return 1;
+            }
         }
     }
     printf("Got Here\n");

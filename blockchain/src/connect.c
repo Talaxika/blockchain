@@ -192,7 +192,7 @@ iResult send_broadcast_message(Blockchain *blockchain)
     struct sockaddr_in broadcastAddr;
     memset(&broadcastAddr, 0, sizeof(broadcastAddr));
     broadcastAddr.sin_family = AF_INET;
-    broadcastAddr.sin_addr.s_addr = inet_addr(IP_ADDRESS_LOCALHOST);
+    broadcastAddr.sin_addr.s_addr = inet_addr(IP_ADDRESS_IPv4);
     broadcastAddr.sin_port = htons(BROADCAST_PORT);
     char message[] = "I want to join";
 
@@ -209,7 +209,7 @@ iResult send_broadcast_message(Blockchain *blockchain)
 
     // Set a timeout for receiving responses
     struct timeval timeout;
-    timeout.tv_sec = RESPONSE_TIMEOUT;
+    timeout.tv_sec = 5000;
     timeout.tv_usec = 0;
 
     iRes = setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout));
@@ -222,17 +222,23 @@ iResult send_broadcast_message(Blockchain *blockchain)
     char responseBuffer[sizeof(Blockchain)];
     uint64_t response_size = 0;
 
-    int numBytes = recvfrom(sockfd, &response_size, sizeof(uint64_t), 0, (struct sockaddr *)&responseAddr, &responseAddrLen);
+    int numBytes = recv(sockfd, &response_size, sizeof(uint64_t), 0);
     if (numBytes == SOCKET_ERROR) {
-        fprintf(stderr, "recvfrom failed or timed out\n");
+        printf("recv failed with error: %d\n", WSAGetLastError());
         closesocket(sockfd);
         WSACleanup();
         return RET_CODE_TIMEOUT; // Return value indicating timeout
     } else {
         // Deserialize the received data into a structure
-        numBytes = recvfrom(sockfd, blockchain, response_size, 0, (struct sockaddr *)&responseAddr, &responseAddrLen);
+        numBytes = recv(sockfd, blockchain, response_size, 0);
+        if (numBytes == SOCKET_ERROR) {
+            printf("recv failed with error: %d\n", WSAGetLastError());
+            closesocket(sockfd);
+            WSACleanup();
+            return RET_CODE_TIMEOUT; // Return value indicating timeout
+        }
         print_blockchain(*blockchain);
-        printf("Received response from %s:%d: %s\n", inet_ntoa(responseAddr.sin_addr), ntohs(responseAddr.sin_port), responseBuffer);
+        // printf("Received response from %s:%d: %s\n", inet_ntoa(responseAddr.sin_addr), ntohs(responseAddr.sin_port), responseBuffer);
     }
 
     closesocket(sockfd);
