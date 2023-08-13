@@ -258,11 +258,7 @@ iResult main_close(void)
 } /* main_close() */
 /*=====================================================================*/
 
-<<<<<<< HEAD
 iResult start_upd_broadcast_listener()
-=======
-iResult start_upd_broadcast_listener(Blockchain *blockchain)
->>>>>>> aae2e82782c63bc35c774ca4f0d2b6305b9d7433
 {
     iResult iRes = RET_CODE_SUCCESS;
     WSADATA wsaData = {0};
