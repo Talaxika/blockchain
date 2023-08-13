@@ -49,6 +49,7 @@ iResult connect_open(conn_cfg_t *cfg)
         printf("socket failed with error: %d\n", WSAGetLastError());
         freeaddrinfo(cfg->result);
         WSACleanup();
+        iRes = RET_CODE_ERROR;
         return iRes;
     }
     // Setup the TCP listening socket
@@ -161,5 +162,83 @@ iResult connect_close(conn_cfg_t *cfg)
         printf("WSACleanup failed with error: %d\n", WSAGetLastError());
     }
 
+    return iRes;
+}
+
+iResult send_broadcast_message(Blockchain *blockchain)
+{
+    iResult iRes = RET_CODE_SUCCESS;
+    WSADATA wsaData = {0};
+    iRes = WSAStartup(MAKEWORD(2, 2), &wsaData);
+    if (iRes != RET_CODE_SUCCESS) {
+        fprintf(stderr, "WSAStartup failed\n");
+        return iRes;
+    }
+
+    SOCKET sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sockfd == INVALID_SOCKET) {
+        fprintf(stderr, "socket failed with error: %d\n", WSAGetLastError());
+        WSACleanup();
+        iRes = RET_CODE_ERROR;
+        return iRes;
+    }
+
+    bool broadcastEnable = TRUE;
+    iRes = setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, (const char *)&broadcastEnable, sizeof(broadcastEnable));
+    if (iRes == SOCKET_ERROR) {
+        fprintf(stderr, "setsockopt failed with error: %d\n", WSAGetLastError());
+        closesocket(sockfd);
+        WSACleanup();
+        return iRes;
+    }
+
+    struct sockaddr_in broadcastAddr;
+    memset(&broadcastAddr, 0, sizeof(broadcastAddr));
+    broadcastAddr.sin_family = AF_INET;
+    broadcastAddr.sin_addr.s_addr = inet_addr(IP_ADDRESS_LOCALHOST);
+    broadcastAddr.sin_port = htons(BROADCAST_PORT);
+    char message[] = "I want to join";
+
+    iRes = sendto(sockfd, message, strlen(message), 0, (struct sockaddr *)&broadcastAddr, sizeof(broadcastAddr));
+    if (iRes == SOCKET_ERROR) {
+        fprintf(stderr, "sendto failed with error: %d\n", WSAGetLastError());
+        closesocket(sockfd);
+        WSACleanup();
+        return iRes;
+    }
+
+    struct sockaddr_in responseAddr;
+    int responseAddrLen = sizeof(responseAddr);
+
+    // Set a timeout for receiving responses
+    struct timeval timeout;
+    timeout.tv_sec = RESPONSE_TIMEOUT;
+    timeout.tv_usec = 0;
+
+    iRes = setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout));
+    if (iRes < 0) {
+        perror("setsockopt timeout");
+        WSACleanup();
+        return iRes;
+    }
+
+    char responseBuffer[sizeof(Blockchain)];
+    uint64_t response_size = 0;
+
+    int numBytes = recvfrom(sockfd, &response_size, sizeof(uint64_t), 0, (struct sockaddr *)&responseAddr, &responseAddrLen);
+    if (numBytes == SOCKET_ERROR) {
+        fprintf(stderr, "recvfrom failed or timed out\n");
+        closesocket(sockfd);
+        WSACleanup();
+        return RET_CODE_TIMEOUT; // Return value indicating timeout
+    } else {
+        // Deserialize the received data into a structure
+        numBytes = recvfrom(sockfd, blockchain, response_size, 0, (struct sockaddr *)&responseAddr, &responseAddrLen);
+        print_blockchain(*blockchain);
+        printf("Received response from %s:%d: %s\n", inet_ntoa(responseAddr.sin_addr), ntohs(responseAddr.sin_port), responseBuffer);
+    }
+
+    closesocket(sockfd);
+    WSACleanup();
     return iRes;
 }

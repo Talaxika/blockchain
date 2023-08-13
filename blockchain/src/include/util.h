@@ -11,8 +11,9 @@
 #include <windows.h>
 #include <ws2tcpip.h>
 
-#define RET_CODE_ERROR 1
-#define RET_CODE_SUCCESS 0
+#define RET_CODE_ERROR   (1U)
+#define RET_CODE_SUCCESS (0U)
+#define RET_CODE_TIMEOUT (200U)
 
 #define MAX_HASH_SIZE (32U)
 

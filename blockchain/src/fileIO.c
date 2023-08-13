@@ -47,7 +47,7 @@ iResult write_to_file(Blockchain blockchain)
 
         for (uint32_t num_trx = 0; num_trx < block.num_transactions; num_trx++)
         {
-            snprintf(buffer, sizeof(buffer), "\t\tIndex: %d\r\n", block.transactions[num_trx].index);
+            snprintf(buffer, sizeof(buffer), "\t\t-Index: %d\r\n", block.transactions[num_trx].index);
             WriteFile(hFile, buffer, strlen(buffer), &bytesWritten, NULL);
 
             snprintf(buffer, sizeof(buffer), "\t\tSender_id: %d\r\n", block.transactions[num_trx].sender_id);

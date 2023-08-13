@@ -1,0 +1,38 @@
+Block: 0
+	Timestamp: 1691931843
+	Previous hash: 0
+	Current hash: 16217246385589045934
+	Nonce: 0
+	Transactions: 1
+		-Index: 0
+		Sender_id: 0
+		Amount: 0
+		Timestamp: 1691931843
+Block: 1
+	Timestamp: 1691931850
+	Previous hash: 16217246385589045934
+	Current hash: 7025289656860054823
+	Nonce: 0
+	Transactions: 2
+		-Index: 0
+		Sender_id: 111
+		Amount: 1691931847
+		Timestamp: 1691931847
+		-Index: 1
+		Sender_id: 111
+		Amount: 1691931851
+		Timestamp: 1691931851
+Block: 2
+	Timestamp: 1691931858
+	Previous hash: 7025289656860054823
+	Current hash: 14305788025721582175
+	Nonce: 0
+	Transactions: 2
+		-Index: 0
+		Sender_id: 111
+		Amount: 1691931856
+		Timestamp: 1691931856
+		-Index: 1
+		Sender_id: 111
+		Amount: 1691931862
+		Timestamp: 1691931862

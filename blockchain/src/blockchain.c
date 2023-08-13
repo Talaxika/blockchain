@@ -120,7 +120,7 @@ void print_block(block_t block) {
     printf("  Transactions: %d\n", block.num_transactions);
     for (int i = 0; i <  block.num_transactions; i++)
     {
-        printf("    Index: %d\n", block.transactions[i].index);
+        printf("    -Index: %d\n", block.transactions[i].index);
         printf("    Sender_id: %d\n", block.transactions[i].sender_id);
         printf("    Amount: %d\n", block.transactions[i].amount);
         printf("    Timestamp: %llu\n", block.transactions[i].timestamp);

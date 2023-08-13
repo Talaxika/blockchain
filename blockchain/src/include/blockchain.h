@@ -4,10 +4,10 @@
 #include "util.h"
 #include "connect.h"
 
-#define BLOCK_TRANSACTION_SIZE (128U)
+#define BLOCK_TRANSACTION_SIZE (12U)
 
-#define MAX_BLOCK_SIZE (256U)
-#define MAX_TRANSACTIONS_SIZE (64U)
+#define MAX_BLOCK_SIZE (6U)
+#define MAX_TRANSACTIONS_SIZE (12U)
 
 #define SLEEP_TIME  (7000U)
 
@@ -46,5 +46,7 @@ iResult mine_block(block_t *block);
 iResult add_transaction(block_t *block, header_cfg_t *hdr_cfg, char *data);
 
 void print_blockchain(Blockchain chain);
+
+iResult send_broadcast_message(Blockchain *blockchain);
 
 #endif /* BLOCKCHAIN_H */
