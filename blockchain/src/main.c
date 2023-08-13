@@ -6,8 +6,8 @@
 #define ROTATIONS_BLK (2U)
 #define ROTATIONS_TRX (2U)
 
-// #define USE_CONNECTION
-// #define USE_MINING
+#define USE_CONNECTION
+#define USE_MINING
 
 /*=========================== Local Typedefs ===========================*/
 /*======================================================================*/
@@ -90,6 +90,14 @@ int main(int argc, char* argv[]) {
         printf("CreateThread error: %d\n", GetLastError());
         return 1;
     }
+
+#ifdef USE_CONNECTION
+    /* Open the socket and start listening */
+    if((iRes_main = connect_open(&iCfg)) != RET_CODE_SUCCESS) {
+        printf("%s(): Unsuccessful Socket initialization", __func__);
+        goto MAIN_END;
+    }
+#endif /* USE_CONNECTION */
     // Check what is done by other blockchains
     // TODO: if first generate, else wait to recieve BC
     /******SETUP*******/
@@ -156,13 +164,7 @@ iResult main_open(void)
         goto END;
     }
 
-#ifdef USE_CONNECTION
-    /* Open the socket and start listening */
-    if((iResult = connect_open(&iCfg)) != RET_CODE_SUCCESS) {
-        printf("%s(): Unsuccessful Socket initialization", __func__);
-        goto END;
-    }
-#endif /* USE_CONNECTION */
+
 
 END:
     return iResult;

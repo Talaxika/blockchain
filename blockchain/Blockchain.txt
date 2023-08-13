@@ -1,10 +1,38 @@
 Block: 0
-	Timestamp: 1691940461
+	Timestamp: 1691941772
 	Previous hash: 0
-	Current hash: 5837118561663219766
+	Current hash: 9389021029388286676
 	Nonce: 0
 	Transactions: 1
 		-Index: 0
 		Sender_id: 0
 		Amount: 0
-		Timestamp: 1691940461
+		Timestamp: 1691941772
+Block: 1
+	Timestamp: 1691941779
+	Previous hash: 9389021029388286676
+	Current hash: 6483642135007904215
+	Nonce: 0
+	Transactions: 2
+		-Index: 0
+		Sender_id: 111
+		Amount: 1691941806
+		Timestamp: 1691941806
+		-Index: 1
+		Sender_id: 111
+		Amount: 1691941816
+		Timestamp: 1691941816
+Block: 2
+	Timestamp: 1691941823
+	Previous hash: 6483642135007904215
+	Current hash: 5598939672291900947
+	Nonce: 0
+	Transactions: 2
+		-Index: 0
+		Sender_id: 111
+		Amount: 1691941821
+		Timestamp: 1691941821
+		-Index: 1
+		Sender_id: 111
+		Amount: 1691941826
+		Timestamp: 1691941826
