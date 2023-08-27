@@ -23,16 +23,5 @@ Block: 1
 		Amount: 1691941929
 		Timestamp: 1691941929
 Block: 2
-	Timestamp: 1691941940
 	Previous hash: 4203913631288698713
 	Current hash: 2345241229470248225
-	Nonce: 0
-	Transactions: 2
-		-Index: 0
-		Sender_id: 111
-		Amount: 1691941931
-		Timestamp: 1691941933
-		-Index: 1
-		Sender_id: 111
-		Amount: 1691941939
-		Timestamp: 1691941940
