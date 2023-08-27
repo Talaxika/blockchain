@@ -12,6 +12,12 @@
 #define SLEEP_TIME  (7000U)
 
 typedef struct {
+  uint32_t n;
+  uint32_t e;
+  uint32_t d;
+} RSAKey;
+
+typedef struct {
   uint32_t index;
   uint32_t sender_id;
   uint32_t amount;
@@ -36,6 +42,10 @@ typedef struct {
 } Blockchain;
 
 time_t get_timestamp();
+
+uint32_t rsa_encrypt(uint32_t enc_timestamp, RSAKey publicKey);
+
+uint32_t rsa_decrypt(uint32_t dec_timestamp, RSAKey privateKey);
 
 iResult initializeFirstBlock(Blockchain *chain);
 

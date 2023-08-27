@@ -1,3 +1,126 @@
-1) Distributed ledger
+Core concepts in Blockchain, incorporated in the programm:
+1) Decentralization
 
-The ledger or ledger, is the record of each and every one of the operations and transactions that are carried out within a blockchain. With this, the ledger becomes one of the fundamental pieces of transparency, security and privacy of blockchain technology and cryptocurrencies.
+What is Decentralization:
+Decentralization refers to the distribution of authority, control, and decision-making across a network of peers,
+rather than being concentrated in a single central entity. In decentralized systems, participants collaborate to
+achieve consensus and manage the network collectively. This concept challenges the traditional model of centralized
+control and offers a new paradigm for organizing various aspects of technology, governance, and economics.
+
+Importance of Decentralization:
+Decentralization is vital for reducing vulnerabilities that arise from centralized control.
+By distributing authority, it mitigates the risk of single points of failure, enhances security,
+and fosters transparency. Decentralization has found applications in various domains, including technology,
+finance, governance, and more.
+
+Distribution of Authority:
+Decentralization involves the dispersal of decision-making authority among multiple participants,
+preventing excessive power concentration. This distribution is often achieved through consensus
+mechanisms that require agreement among a majority of participants before changes are made.
+
+Peer-to-Peer Network:
+Decentralized systems often utilize a peer-to-peer (P2P) network architecture.
+In a P2P network, each node is both a consumer and provider of resources, creating a resilient
+and interconnected structure without the need for a central server.
+
+Redundancy and Resilience:
+Decentralization inherently offers redundancy. If one node fails or goes offline, the network
+continues to operate smoothly. This resilience makes decentralized systems less susceptible to outages or attacks.
+
+Enhanced Security:
+Decentralization mitigates the risk of a single point of failure, making it more challenging
+for malicious actors to compromise the entire system. Even if some nodes are compromised,
+the network remains operational.
+
+Increased Privacy:
+Decentralization can enhance privacy by reducing the need for centralized entities to store
+and manage personal data. Participants have more control over their information, reducing the
+exposure of sensitive data.
+
+Reduced Single Points of Failure:
+Centralized systems are vulnerable to disruptions caused by central points of control.
+Decentralized systems distribute control, reducing the impact of failures or attacks on the
+network's overall functionality.
+
+Empowerment of Individuals:
+Decentralization empowers individuals by giving them greater control over their digital interactions.
+Participants have the ability to validate and participate in transactions without relying on intermediaries.
+
+2) Distributed Ledger
+A blockchain maintains a continuously growing list of records called blocks.
+Each block contains a batch of transactions, and these blocks are linked together in a chronological order, forming a chain.
+This ledger is replicated and maintained on every participating node.
+
+3) Cryptographic Hashing
+Cryptographic hashing is a process that converts input data of any size into a fixed-size string of characters.
+Hash functions are designed to be fast to compute, irreversible, and deterministic.
+They are widely used for data integrity verification and digital signatures.
+
+Irreversibility: It's computationally infeasible to reverse a hash function and retrieve the original input data from the hash.
+Deterministic: The same input will always produce the same hash output.
+Collision Resistance: A good hash function minimizes the chances of two different inputs producing the same hash value (collision).
+Hash functions are used in various applications, including password hashing, digital signatures, and blockchain technology.
+
+4) Encryption
+Encryption is the process of converting plaintext data into ciphertext to protect it from unauthorized access.
+It involves using an encryption algorithm and a key to transform data into a format
+that is unreadable without the corresponding decryption key.
+
+Symmetric Encryption: Uses the same key for both encryption and decryption.
+Examples include AES (Advanced Encryption Standard) and DES (Data Encryption Standard).
+
+Asymmetric Encryption: Uses a pair of keys: a public key for encryption and a private key for decryption.
+Examples include RSA and ECC (Elliptic Curve Cryptography).
+
+Encryption ensures data confidentiality, preventing unauthorized parties from understanding the
+content even if they gain access to the ciphertext.
+
+5) Immutability
+Once data is added to a blockchain, it is extremely difficult to change.
+This is due to the cryptographic linking of blocks and the consensus mechanisms that prevent tampering.
+
+6) Transparency
+All transactions added to the blockchain are visible to all participants.
+This transparency builds trust and accountability in the network.
+
+7) Security:
+The decentralized nature of blockchains, combined with cryptographic techniques,
+provides a high level of security against attacks and fraud.
+Data is transparent, verifiable, and secure.
+
+8) Permissioned vs. Permissionless:
+Blockchains can be permissioned (private) or permissionless (public).
+Permissioned blockchains restrict participation, while permissionless blockchains are open to anyone.
+
+9) Use Cases:
+Blockchains have applications beyond cryptocurrencies.
+They are used for supply chain management, voting systems, identity verification, medical records, digital ownership, and more.
+
+Concepts that can be incorporated:
+1) Consensus Mechanisms:
+Blockchains use consensus mechanisms to agree on the state of the ledger across the network.
+Different mechanisms, such as Proof of Work (PoW) or Proof of Stake (PoS),
+ensure that a majority of nodes agree on the validity of transactions and the order of blocks.
+
+2) Smart Contracts:
+Blockchains can include programmable scripts known as smart contracts.
+These contracts automatically execute when certain conditions are met.
+They enable self-executing agreements with predefined rules, without requiring intermediaries.
+
+3) Scalability and Challenges:
+One challenge is the scalability of blockchains, as they can become slower and more resource-intensive as more transactions are added.
+Solutions like sharding, layer-2 networks, and consensus algorithm improvements aim to address this issue.
+
+Integration of these concepts in the Blockchain programm:
+
+The main concept of blockchains is security.
+The blockchain is decentralized, it runs on each computer seperately. If one of the computer fails, nothing will go wrong,
+and no information will be lost. Thanks to the Peer-2-peer concept, every block is consumer and provider of resources,
+creating a resilient and interconnected structure without the need for a central server.
+Thanks to the blocks being in a chain, every new block will also verify the previous block,
+and will be verified by the next block. This creates immutability, which heightens security. And with the help of hashing,
+which with the same input will always produce the same hash output, security will be very once again heightend.
+Transparency is once again used for the increase of security. The blockchain also can decide not to allow somebody inside the
+network, if it thinks that the new PC is not reliable, increasing the security once again. The whole programm makes sure,
+that the information it receives is neatly arragned. The newer treansactions will be in the newer blocks and it can be made sure,
+that the data inside the blocks is correct.

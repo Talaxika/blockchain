@@ -6,8 +6,8 @@
 #define ROTATIONS_BLK (2U)
 #define ROTATIONS_TRX (2U)
 
-// #define USE_CONNECTION
-// #define USE_MINING
+#define USE_CONNECTION
+#define USE_MINING
 
 /*=========================== Local Typedefs ===========================*/
 /*======================================================================*/
@@ -25,7 +25,7 @@ volatile int stop_listening = 0;
 
 /* Make a function pointer so that it's more flexible.
  * It will be equal to the recv function*/
-char* (*recv_cb)(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations);
+// char* (*recv_cb)(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations);
 /*======================================================================*/
 
 /*==================== Global Function Declarations ====================*/
@@ -58,8 +58,21 @@ iResult_thread WINAPI main_recv(void *);
  **/
 iResult_thread WINAPI main_mine(void *);
 
+/* Main broadcasting function.
+ *  - This is the broadcasting function that is ran from thread_bcast.
+ *  - If this is the first computer, that joined the blockchain, it will
+ *  generate the blockchain, otherwise it will wait for the blockchain to
+ *  be sent to it. Then it starts waiting other PC's, and will be the sender.
+ *  The goal is to achieve parallelism. While the block generation and
+ *  transactions are being done, this will be the synchronisation between PC's.
+ **/
 iResult_thread WINAPI main_bcast(void *);
 
+/* Supportive broadcasting function.
+ *  Main function, called from main_bcast(). It is defined inside the main file,
+ *  because we need the "stop_listening" variable. The purpose is signal the function
+ *  that the program is ready to be finished.
+ **/
 iResult start_upd_broadcast_listener();
 
 /* Main de-initializing function.

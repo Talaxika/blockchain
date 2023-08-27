@@ -132,7 +132,7 @@ int connect_open(conn_cfg_t *cfg)
     hints.ai_protocol = IPPROTO_TCP;
 
     // Resolve the server address and port
-    iResult = getaddrinfo(IP_ADDRESS_LOCALHOST, DEFAULT_PORT, &hints, &cfg->result);
+    iResult = getaddrinfo(IP_ADDRESS_IPv4, DEFAULT_PORT, &hints, &cfg->result);
     if ( iResult != 0 ) {
         printf("getaddrinfo failed with error: %d\n", iResult);
         WSACleanup();

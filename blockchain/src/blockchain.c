@@ -26,6 +26,41 @@ uint32_t get_num_len(uint64_t value)
     return l;
 }
 
+
+static uint32_t mod_exp(uint32_t base, uint32_t exp, uint32_t mod) {
+    uint32_t result = 1;
+    base = base % mod;
+
+    while (exp > 0) {
+        if (exp % 2 == 1) {
+            result = (result * base) % mod;
+        }
+
+        exp = exp >> 1;
+        base = (base * base) % mod;
+    }
+
+    return result;
+}
+
+    /*
+    int p = 61; // Prime number
+    int q = 53; // Prime number
+    int modulus = p * q;
+    int phi = (p - 1) * (q - 1);
+    int publicKey = 17; // Public exponent
+    int privateKey = mod_inverse(publicKey, phi);
+    */
+// Function to perform RSA encryption
+uint32_t rsa_encrypt(uint32_t enc_timestamp, RSAKey publicKey) {
+    return mod_exp(enc_timestamp, publicKey.e, publicKey.n);
+}
+
+// Function to perform RSA decryption
+uint32_t rsa_decrypt(uint32_t dec_timestamp, RSAKey privateKey) {
+    return mod_exp(dec_timestamp, privateKey.d, privateKey.n);
+}
+
 uint64_t hash(uint64_t input) {
     const uint64_t prime = 1099511628211ULL;  // A large prime number
     const uint64_t offset = 14695981039346656037ULL;  // Another constant

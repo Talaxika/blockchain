@@ -1,0 +1,38 @@
+Public/Private Key Encryption
+Overview
+The blockchain incorporates and demonstrates a basic example of public-key encryption and decryption. It uses a simplified version of the RSA algorithm to showcase the core concepts of public and private keys, modular exponentiation, and encryption/decryption operations.
+
+Key Concepts
+Key Generation: The program simulates the generation of public and private keys using small prime numbers (p and q). The modulus (n) and public/private exponents (e and d) are calculated based on these primes.
+
+Modular Arithmetic: The program utilizes modular arithmetic operations for encryption and decryption. These operations ensure that the ciphertext can be decrypted correctly using the private key.
+
+Encryption: The encrypt function performs modular exponentiation of the plaintext using the public exponent and modulus. This generates the ciphertext, which can only be decrypted using the corresponding private key.
+
+Decryption: The decrypt function performs modular exponentiation of the ciphertext using the private exponent and modulus. This recovers the original plaintext from the ciphertext.
+
+Program Components
+gcd Function: Calculates the greatest common divisor (GCD) of two numbers.
+
+mod_inverse Function: Computes the modular inverse of a number using the extended Euclidean algorithm.
+
+mod_exp Function: Performs modular exponentiation (base^exp % mod) for encryption and decryption.
+
+encrypt Function: Encrypts a plaintext message using the public key by applying modular exponentiation.
+
+decrypt Function: Decrypts a ciphertext using the private key by applying modular exponentiation.
+
+
+Usage:
+
+Main usage of the encryption, is for the sensor to encrypt it's data with it's private key.
+This way noone can steal it and decrypt it, because only the blockchain knows the public key.
+After the data is decrypted, it will be transfered inside the blocks.
+
+Important Notes
+This program uses small prime numbers and simplified algorithms for educational purposes only. In a real-world scenario, larger prime numbers and established cryptographic libraries should be used.
+
+The program lacks many security features and mechanisms required for actual secure public-key encryption. Security considerations include secure key generation, padding schemes, and handling of large numbers.
+
+Public-key encryption algorithms like RSA are complex and require thorough understanding and proper implementation to ensure security. It is recommended to use established libraries like OpenSSL for real-world encryption needs.
+But for exemplary and learning goals, like the blockchain program, a simplified version is enough.
