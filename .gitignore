@@ -31,3 +31,12 @@
 .DS_Store
 .DS_Store?
 ._*
+
+#Ignore esp32-c6 build directory
+esp32-c6/udp_client/build/
+esp32-c6/udp_client/README.md
+esp32-c6/udp_client/pytest_udp_client.py
+esp32-c6/udp_client/sdkconfig
+esp32-c6/udp_client/sdkconfig.ci
+esp32-c6/udp_client/sdkconfig.ci.linux
+esp32-c6/udp_client/sdkconfig.old
