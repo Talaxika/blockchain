@@ -207,10 +207,12 @@ iResult_thread main_recv(void *)
 
     while (rotations_TRX > 0)
     {
-        char* recv_buff = connect_recieve(&iCfg, &iHdr_cfg, rotations_TRX);
-        add_transaction(&iBlockchain.blocks[iBlockchain.num_blocks], &iHdr_cfg, recv_buff);
-
-        rotations_TRX--;
+        char* recv_buff = udp_server_receive(&iCfg, &iHdr_cfg, rotations_TRX);
+        if (NULL != recv_buff)
+        {
+            add_transaction(&iBlockchain.blocks[iBlockchain.num_blocks], &iHdr_cfg, recv_buff);
+            rotations_TRX--;
+        }
     }
     //         if (! ReleaseMutex(mutex_recv))
     //         {

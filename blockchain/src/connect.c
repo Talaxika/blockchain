@@ -4,6 +4,8 @@
 #include "include/blockchain.h"
 #include "include/connect.h"
 
+#define PRINT_DEBUG
+
 // Need to link with Ws2_32.lib
 // #pragma comment (lib, "Ws2_32.lib")
 // #pragma comment (lib, "Mswsock.lib")
@@ -99,10 +101,9 @@ char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations
 
         char send_char[2] = "1";
         printf("Bytes received: %d\n", iRes);
-        printf("Buffer length: %d, Sensor ID: %d, Data Type: %d\n",
+        printf("Buffer length: %d, Sensor ID: %d\n",
         hdr_cfg->buf_len,
-        hdr_cfg->sen_info.sen_id,
-        hdr_cfg->type);
+        hdr_cfg->sen_info.sen_id);
 
         /* After the header is received and verified, 1 is echo-ed to the sender, to show him, that
          * he can send the data. */
@@ -165,6 +166,105 @@ iResult connect_close(conn_cfg_t *cfg)
     return iRes;
 }
 
+#define PORT 3333
+
+char* udp_server_receive(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations)
+{
+    char rx_buffer[128];
+    char addr_str[128];
+    int addr_family = AF_INET;
+    int ip_protocol = 0;
+    struct sockaddr_in6 dest_addr;
+    char *recv_buffer = NULL;
+    while (1) {
+
+        struct sockaddr_in *dest_addr_ip4 = (struct sockaddr_in *)&dest_addr;
+        dest_addr_ip4->sin_addr.s_addr = htonl(INADDR_ANY);
+        dest_addr_ip4->sin_family = AF_INET;
+        dest_addr_ip4->sin_port = htons(PORT);
+        ip_protocol = IPPROTO_IP;
+
+        int sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
+#ifdef PRINT_DEBUG
+        if (sock < 0) {
+            printf("Unable to create socket: errno %d", errno);
+            break;
+        }
+        printf("Socket created");
+#endif
+
+        // Set timeout
+        struct timeval timeout;
+        timeout.tv_sec = 10;
+        timeout.tv_usec = 0;
+        setsockopt (sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+
+        int err = bind(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+#ifdef PRINT_DEBUG
+        if (err < 0) {
+            printf("Socket unable to bind: errno %d", errno);
+        }
+        printf("Socket bound, port %d", PORT);
+#endif
+        struct sockaddr_storage source_addr; // Large enough for both IPv4 or IPv6
+        socklen_t socklen = sizeof(source_addr);
+
+        while (1) {
+
+            int len = recvfrom(sock, hdr_cfg, sizeof(header_cfg_t), 0, (struct sockaddr *)&source_addr, &socklen);
+
+            // Error occurred during receiving
+            if (len < 0) {
+#ifdef PRINT_DEBUG
+                printf("recvfrom failed: errno %d", errno);
+#endif
+                break;
+            }
+            // Data received
+            else {
+                printf("Bytes received: %d\n", len);
+                printf("Buffer length: %d, Sensor ID: %d\n",
+                hdr_cfg->buf_len,
+                hdr_cfg->sen_info.sen_id);
+                char send_char[2] = "1";
+
+                /* After the header is received and verified, 1 is echo-ed to the sender, to show him, that
+                * he can send the data. */
+                if (rotations == 1) {
+                    strncpy(send_char, "2", 2);
+                }
+                printf("Sending answer: %s\n", send_char);
+
+                int err = sendto(sock, send_char, (int) ANSWER_LENGHT, 0, (struct sockaddr *)&source_addr, sizeof(source_addr));
+                if (err < 0) {
+#ifdef PRINT_DEBUG
+                    printf("Error occurred during sending: errno %d", errno);
+#endif
+                    break;
+                }
+
+                 recv_buffer = malloc(sizeof(char) * hdr_cfg->buf_len);
+                 int len = recvfrom(sock, recv_buffer, hdr_cfg->buf_len,
+                                    0, (struct sockaddr *)&source_addr, &socklen);
+
+                /* Because the recv function is a byte stream, it does not put the '\0' symbol.
+                * It should be manually put*/
+                recv_buffer[hdr_cfg->buf_len] = '\0';
+                printf("Bytes received: %d, Data received: %s\n", len, recv_buffer);
+                return recv_buffer;
+            }
+        }
+
+        if (sock != -1) {
+#ifdef PRINT_DEBUG
+            printf("Shutting down socket and restarting...");
+#endif
+            closesocket(sock);
+        }
+    }
+    return NULL;
+}
+
 iResult send_broadcast_message(Blockchain *blockchain)
 {
     iResult iRes = RET_CODE_SUCCESS;
@@ -192,7 +292,8 @@ iResult send_broadcast_message(Blockchain *blockchain)
     struct sockaddr_in broadcastAddr;
     memset(&broadcastAddr, 0, sizeof(broadcastAddr));
     broadcastAddr.sin_family = AF_INET;
-    broadcastAddr.sin_addr.s_addr = inet_addr(IP_ADDRESS_IPv4);
+    /* Moje da testvam s wireshark da gledam kakvi address-es se polzvat */
+    broadcastAddr.sin_addr.s_addr = inet_addr(IP_ADDRESS_IPv4); /* tuk da se smeni */
     broadcastAddr.sin_port = htons(BROADCAST_PORT);
     char message[] = "I want to join";
 

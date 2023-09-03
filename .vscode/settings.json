@@ -6,5 +6,6 @@
         "windows.h": "c",
         "stdlib.h": "c",
         "winsock2.h": "c"
-    }
+    },
+    "idf.portWin": "COM3"
 }

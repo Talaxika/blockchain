@@ -10,6 +10,9 @@
 #define RESPONSE_TIMEOUT "5000" // Response timeout in seconds
 #define MAX_TIMEOUT (5U)
 
+#define BCAST_ADDRESS "255.255.255.255"
+/* za prashtane do vsichki, po dobra versiq na ipv4*/
+
 #define BROADCAST_MESSAGE "Hello"
 #define DEFAULT_BUFLEN 16
 #define ANSWER_LENGHT 1
@@ -35,6 +38,8 @@ typedef struct
     SOCKET ListenSocket;
     SOCKET ClientSocket;
 } conn_cfg_t;
+
+char* udp_server_receive(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations);
 
 iResult connect_open(conn_cfg_t *cfg);
 
