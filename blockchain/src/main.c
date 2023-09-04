@@ -202,15 +202,16 @@ iResult_thread main_recv(void *)
     //     case WAIT_OBJECT_0:
 
     header_cfg_t iHdr_cfg = {0};
+    sensor_info_t sen_info = {0};
     uint32_t rotations_TRX = ROTATIONS_TRX;
     memset(&local_transactions, 0, sizeof(transaction_t));
 
     while (rotations_TRX > 0)
     {
-        char* recv_buff = udp_server_receive(&iCfg, &iHdr_cfg, rotations_TRX);
+        char* recv_buff = udp_server_receive(&iCfg, &sen_info, rotations_TRX);
         if (NULL != recv_buff)
         {
-            add_transaction(&iBlockchain.blocks[iBlockchain.num_blocks], &iHdr_cfg, recv_buff);
+            add_transaction(&iBlockchain.blocks[iBlockchain.num_blocks], &sen_info, recv_buff);
             rotations_TRX--;
         }
     }

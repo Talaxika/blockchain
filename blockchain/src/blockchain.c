@@ -103,7 +103,7 @@ iResult mine_block(block_t *block)
     return iRes;
 }
 
-iResult add_transaction(block_t *block, header_cfg_t *hdr_cfg, char *data)
+iResult add_transaction(block_t *block, sensor_info_t *sen_info, char *data)
 {
     iResult iRes = RET_CODE_ERROR;
     transaction_t tx = {0};
@@ -116,8 +116,8 @@ iResult add_transaction(block_t *block, header_cfg_t *hdr_cfg, char *data)
 
     tx.index = block->num_transactions;
     tx.timestamp = get_timestamp();
-    tx.sender_id = (uint32_t) hdr_cfg->sen_info.sen_id;
-    tx.amount = strtol(data, &end, 10);
+    tx.sen_temp = sen_info->sen_temp;
+    memcpy(tx.base_mac_addr, sen_info->base_mac_addr, 6);
 
     block->transactions[block->num_transactions] = tx;
     block->num_transactions++;
@@ -134,8 +134,8 @@ iResult initializeFirstBlock(Blockchain *chain)
     chain->blocks[0].previous_hash = 0;
     chain->blocks[0].num_transactions = 1;
     chain->blocks[0].transactions[0].index = 0;
-    chain->blocks[0].transactions[0].amount = 0;
-    chain->blocks[0].transactions[0].sender_id = 0;
+    chain->blocks[0].transactions[0].sen_temp = 0;
+    memcpy(chain->blocks[0].transactions[0].base_mac_addr, 0, 6);
     chain->blocks[0].transactions[0].timestamp = get_timestamp();
 
     /* con_len, hash and nonce is generated from mining */
@@ -156,9 +156,15 @@ void print_block(block_t block) {
     for (int i = 0; i <  block.num_transactions; i++)
     {
         printf("    -Index: %d\n", block.transactions[i].index);
-        printf("    Sender_id: %d\n", block.transactions[i].sender_id);
-        printf("    Amount: %d\n", block.transactions[i].amount);
+        printf("    Temperature: %d\n", block.transactions[i].sen_temp);
         printf("    Timestamp: %llu\n", block.transactions[i].timestamp);
+        printf("    Sensor mac address: 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x\n",
+                    block.transactions[i].base_mac_addr[0],
+                    block.transactions[i].base_mac_addr[1],
+                    block.transactions[i].base_mac_addr[2],
+                    block.transactions[i].base_mac_addr[3],
+                    block.transactions[i].base_mac_addr[4],
+                    block.transactions[i].base_mac_addr[5]);
     }
 }
 

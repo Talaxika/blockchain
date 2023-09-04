@@ -19,9 +19,9 @@ typedef struct {
 
 typedef struct {
   uint32_t index;
-  uint32_t sender_id;
-  uint32_t amount;
+  float sen_temp;
   time_t timestamp;
+  uint8_t base_mac_addr[6];
 } transaction_t;
 
 typedef struct {
@@ -53,7 +53,7 @@ iResult build_and_verify_block(Blockchain *chain);
 
 iResult mine_block(block_t *block);
 
-iResult add_transaction(block_t *block, header_cfg_t *hdr_cfg, char *data);
+iResult add_transaction(block_t *block, sensor_info_t *sen_info, char *data);
 
 void print_blockchain(Blockchain chain);
 

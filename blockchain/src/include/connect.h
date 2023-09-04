@@ -17,18 +17,9 @@
 #define DEFAULT_BUFLEN 16
 #define ANSWER_LENGHT 1
 
-typedef enum
-{
-    TYPE_CHAR,   /** val=1 **/
-    TYPE_INT,    /** val=2 **/
-    TYPE_DOUBLE, /** val=3 **/
-
-} DataType;
-
 typedef struct
 {
     sensor_info_t sen_info;
-    DataType type;
     uint32_t buf_len;
 } header_cfg_t;
 
@@ -39,7 +30,7 @@ typedef struct
     SOCKET ClientSocket;
 } conn_cfg_t;
 
-char* udp_server_receive(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations);
+iResult udp_server_receive(conn_cfg_t *cfg, sensor_info_t *sen_info, uint32_t rotations);
 
 iResult connect_open(conn_cfg_t *cfg);
 

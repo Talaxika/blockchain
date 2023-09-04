@@ -76,9 +76,10 @@ iResult connect_open(conn_cfg_t *cfg)
 
     return iRes;
 }
-
+#if 0
 char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations)
 {
+    
     iResult iRes = RET_CODE_ERROR;
     uint32_t iSendResult = 0;
 
@@ -146,6 +147,7 @@ char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations
     closesocket(cfg->ClientSocket);
     return recv_buffer;
 }
+#endif
 
 iResult connect_close(conn_cfg_t *cfg)
 {
@@ -168,8 +170,10 @@ iResult connect_close(conn_cfg_t *cfg)
 
 #define PORT 3333
 
-char* udp_server_receive(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations)
+iResult udp_server_receive(conn_cfg_t *cfg, sensor_info_t *sen_info, uint32_t rotations)
 {
+    /* TODO: Fix returns */
+    /* TODO: Make proper recv send recv. */
     char rx_buffer[128];
     char addr_str[128];
     int addr_family = AF_INET;
@@ -211,7 +215,7 @@ char* udp_server_receive(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotati
 
         while (1) {
 
-            int len = recvfrom(sock, hdr_cfg, sizeof(header_cfg_t), 0, (struct sockaddr *)&source_addr, &socklen);
+            int len = recvfrom(sock, sen_info, sizeof(sen_info), 0, (struct sockaddr *)&source_addr, &socklen);
 
             // Error occurred during receiving
             if (len < 0) {
@@ -222,10 +226,6 @@ char* udp_server_receive(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotati
             }
             // Data received
             else {
-                printf("Bytes received: %d\n", len);
-                printf("Buffer length: %d, Sensor ID: %d\n",
-                hdr_cfg->buf_len,
-                hdr_cfg->sen_info.sen_id);
                 char send_char[2] = "1";
 
                 /* After the header is received and verified, 1 is echo-ed to the sender, to show him, that
@@ -242,16 +242,28 @@ char* udp_server_receive(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotati
 #endif
                     break;
                 }
-
-                 recv_buffer = malloc(sizeof(char) * hdr_cfg->buf_len);
-                 int len = recvfrom(sock, recv_buffer, hdr_cfg->buf_len,
+                int len = recvfrom(sock, sen_info,sizeof(sen_info),
                                     0, (struct sockaddr *)&source_addr, &socklen);
-
-                /* Because the recv function is a byte stream, it does not put the '\0' symbol.
-                * It should be manually put*/
-                recv_buffer[hdr_cfg->buf_len] = '\0';
-                printf("Bytes received: %d, Data received: %s\n", len, recv_buffer);
-                return recv_buffer;
+                if (len < 0) {
+#ifdef PRINT_DEBUG
+                printf("recvfrom failed: errno %d", errno);
+#endif
+                break;
+                }
+                // Data received
+                else {
+                printf("Bytes received: %d\n", len);
+                printf("Sensor temperature: %f Sensor mac address: 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x\n",
+                    sen_info->sen_temp,
+                    sen_info->base_mac_addr[0],
+                    sen_info->base_mac_addr[1],
+                    sen_info->base_mac_addr[2],
+                    sen_info->base_mac_addr[3],
+                    sen_info->base_mac_addr[4],
+                    sen_info->base_mac_addr[5]);
+                
+                return sen_info;
+                }
             }
         }
 

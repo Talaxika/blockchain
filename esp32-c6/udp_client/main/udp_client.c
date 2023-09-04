@@ -17,6 +17,7 @@
 #include "nvs_flash.h"
 #include "esp_netif.h"
 #include "protocol_examples_common.h"
+#include "esp_mac.h"
 
 #include "lwip/err.h"
 #include "lwip/sockets.h"
@@ -44,6 +45,14 @@
 static const char *TAG = "UDP_Client";
 static const char *payload = "Message from ESP32 ";
 
+typedef struct {
+    uint8_t base_mac_addr[6];
+    float sen_temp;
+} sensor_info_t;
+
+static sensor_info_t sen_info = {0};
+temperature_sensor_handle_t temp_sensor = NULL;
+
 static void udp_client_task(void *pvParameters)
 {
     char rx_buffer[128];
@@ -52,6 +61,10 @@ static void udp_client_task(void *pvParameters)
     int ip_protocol = 0;
 
     while (1) {
+
+        ESP_LOGI(TAG, "Read temperature");
+        ESP_ERROR_CHECK(temperature_sensor_get_celsius(temp_sensor, &sen_info.tsens_value));
+        ESP_LOGI(TAG, "Temperature value %f ℃", sen_info.tsens_value);
 
 #if defined(CONFIG_EXAMPLE_IPV4)
         struct sockaddr_in dest_addr;
@@ -131,20 +144,19 @@ static void udp_client_task(void *pvParameters)
 void app_main(void)
 {
     ESP_LOGI(TAG, "Install temperature sensor, expected temp ranger range: 10~50 ℃");
-    temperature_sensor_handle_t temp_sensor = NULL;
     temperature_sensor_config_t temp_sensor_config = TEMPERATURE_SENSOR_CONFIG_DEFAULT(10, 50);
     ESP_ERROR_CHECK(temperature_sensor_install(&temp_sensor_config, &temp_sensor));
 
     ESP_LOGI(TAG, "Enable temperature sensor");
     ESP_ERROR_CHECK(temperature_sensor_enable(temp_sensor));
 
-    ESP_LOGI(TAG, "Read temperature");
-    int cnt = 20;
-    float tsens_value;
-    while (cnt--) {
-        ESP_ERROR_CHECK(temperature_sensor_get_celsius(temp_sensor, &tsens_value));
-        ESP_LOGI(TAG, "Temperature value %.02f ℃", tsens_value);
-        
+    esp_err_t ret = esp_read_mac(sen_info.base_mac_addr, ESP_MAC_EFUSE_FACTORY);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to get base MAC address from EFUSE BLK0. (%s)", esp_err_to_name(ret));
+        ESP_LOGE(TAG, "Aborting");
+        abort();
+    } else {
+        ESP_LOGI(TAG, "Base MAC Address read from EFUSE BLK0");
     }
 
     ESP_ERROR_CHECK(nvs_flash_init());

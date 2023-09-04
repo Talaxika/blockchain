@@ -22,7 +22,8 @@ typedef uint32_t iResult;
 typedef long unsigned int iResult_thread;
 
 typedef struct {
-    uint32_t sen_id;
+    uint8_t base_mac_addr[6];
+    float sen_temp;
 } sensor_info_t;
 
 
