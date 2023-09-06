@@ -5,12 +5,16 @@
 #include "include/connect.h"
 
 #define PRINT_DEBUG
+#define MESSAGE_ESP_SIZE (19u)
 
 // Need to link with Ws2_32.lib
 // #pragma comment (lib, "Ws2_32.lib")
 // #pragma comment (lib, "Mswsock.lib")
 
 // gcc server.c -o server.exe -lwsock32 -lWs2_32
+
+static const char *permission = "3";
+static const char *join_message = "I want to join";
 
 iResult connect_open(conn_cfg_t *cfg)
 {
@@ -169,17 +173,13 @@ iResult connect_close(conn_cfg_t *cfg)
 }
 
 #define PORT 3333
-
+// #define PRINT_UDP
 iResult udp_server_receive(conn_cfg_t *cfg, sensor_info_t *sen_info, uint32_t rotations)
 {
-    /* TODO: Fix returns */
-    /* TODO: Make proper recv send recv. */
-    char rx_buffer[128];
-    char addr_str[128];
+    char rx_buffer[128] = {0};
     int addr_family = AF_INET;
     int ip_protocol = 0;
     struct sockaddr_in6 dest_addr;
-    char *recv_buffer = NULL;
     while (1) {
 
         struct sockaddr_in *dest_addr_ip4 = (struct sockaddr_in *)&dest_addr;
@@ -189,7 +189,7 @@ iResult udp_server_receive(conn_cfg_t *cfg, sensor_info_t *sen_info, uint32_t ro
         ip_protocol = IPPROTO_IP;
 
         int sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
-#ifdef PRINT_DEBUG
+#ifdef PRINT_UDP
         if (sock < 0) {
             printf("Unable to create socket: errno %d", errno);
             break;
@@ -204,7 +204,7 @@ iResult udp_server_receive(conn_cfg_t *cfg, sensor_info_t *sen_info, uint32_t ro
         setsockopt (sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 
         int err = bind(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
-#ifdef PRINT_DEBUG
+#ifdef PRINT_UDP
         if (err < 0) {
             printf("Socket unable to bind: errno %d", errno);
         }
@@ -215,37 +215,34 @@ iResult udp_server_receive(conn_cfg_t *cfg, sensor_info_t *sen_info, uint32_t ro
 
         while (1) {
 
-            int len = recvfrom(sock, sen_info, sizeof(sen_info), 0, (struct sockaddr *)&source_addr, &socklen);
+            int len = recvfrom(sock, rx_buffer, strlen(rx_buffer) - 1, 0, (struct sockaddr *)&source_addr, &socklen);
 
             // Error occurred during receiving
             if (len < 0) {
-#ifdef PRINT_DEBUG
+#ifdef PRINT_UDP
                 printf("recvfrom failed: errno %d", errno);
 #endif
                 break;
             }
+            rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string
+            printf("Received request %s:", rx_buffer);
+            if (strncmp(rx_buffer, "Message from ESP32", MESSAGE_ESP_SIZE) != 0) {
+                printf("Unknown request, no permission given");
+                break;
+            }
             // Data received
             else {
-                char send_char[2] = "1";
-
-                /* After the header is received and verified, 1 is echo-ed to the sender, to show him, that
-                * he can send the data. */
-                if (rotations == 1) {
-                    strncpy(send_char, "2", 2);
-                }
-                printf("Sending answer: %s\n", send_char);
-
-                int err = sendto(sock, send_char, (int) ANSWER_LENGHT, 0, (struct sockaddr *)&source_addr, sizeof(source_addr));
+                int err = sendto(sock, permission, (int) ANSWER_LENGHT, 0, (struct sockaddr *)&source_addr, sizeof(source_addr));
                 if (err < 0) {
-#ifdef PRINT_DEBUG
+#ifdef PRINT_UDP
                     printf("Error occurred during sending: errno %d", errno);
 #endif
                     break;
                 }
-                int len = recvfrom(sock, sen_info,sizeof(sen_info),
+                int len = recvfrom(sock, sen_info, sizeof(sen_info),
                                     0, (struct sockaddr *)&source_addr, &socklen);
                 if (len < 0) {
-#ifdef PRINT_DEBUG
+#ifdef PRINT_UDP
                 printf("recvfrom failed: errno %d", errno);
 #endif
                 break;
@@ -261,20 +258,19 @@ iResult udp_server_receive(conn_cfg_t *cfg, sensor_info_t *sen_info, uint32_t ro
                     sen_info->base_mac_addr[3],
                     sen_info->base_mac_addr[4],
                     sen_info->base_mac_addr[5]);
-                
-                return sen_info;
                 }
+                return 0;
             }
         }
 
         if (sock != -1) {
-#ifdef PRINT_DEBUG
+#ifdef PRINT_UDP
             printf("Shutting down socket and restarting...");
 #endif
             closesocket(sock);
         }
     }
-    return NULL;
+    return 1;
 }
 
 iResult send_broadcast_message(Blockchain *blockchain)
@@ -305,11 +301,10 @@ iResult send_broadcast_message(Blockchain *blockchain)
     memset(&broadcastAddr, 0, sizeof(broadcastAddr));
     broadcastAddr.sin_family = AF_INET;
     /* Moje da testvam s wireshark da gledam kakvi address-es se polzvat */
-    broadcastAddr.sin_addr.s_addr = inet_addr(IP_ADDRESS_IPv4); /* tuk da se smeni */
+    broadcastAddr.sin_addr.s_addr = inet_addr(BCAST_ADDRESS);
     broadcastAddr.sin_port = htons(BROADCAST_PORT);
-    char message[] = "I want to join";
 
-    iRes = sendto(sockfd, message, strlen(message), 0, (struct sockaddr *)&broadcastAddr, sizeof(broadcastAddr));
+    iRes = sendto(sockfd, join_message, 15, 0, (struct sockaddr *)&broadcastAddr, sizeof(broadcastAddr));
     if (iRes == SOCKET_ERROR) {
         fprintf(stderr, "sendto failed with error: %d\n", WSAGetLastError());
         closesocket(sockfd);
@@ -317,8 +312,8 @@ iResult send_broadcast_message(Blockchain *blockchain)
         return iRes;
     }
 
-    struct sockaddr_in responseAddr;
-    int responseAddrLen = sizeof(responseAddr);
+    // struct sockaddr_in responseAddr;
+    // int responseAddrLen = sizeof(responseAddr);
 
     // Set a timeout for receiving responses
     struct timeval timeout;
@@ -332,12 +327,16 @@ iResult send_broadcast_message(Blockchain *blockchain)
         return iRes;
     }
 
-    char responseBuffer[sizeof(Blockchain)];
+    // char responseBuffer[sizeof(Blockchain)];
     uint64_t response_size = 0;
 
     int numBytes = recv(sockfd, &response_size, sizeof(uint64_t), 0);
     if (numBytes == SOCKET_ERROR) {
-        printf("recv failed with error: %d\n", WSAGetLastError());
+        if (WSAGetLastError() == 10060) {
+            printf("Didn't receive blockchain\n");
+        } else {
+            printf("recv failed with error: %d\n", WSAGetLastError());
+        }
         closesocket(sockfd);
         WSACleanup();
         return RET_CODE_TIMEOUT; // Return value indicating timeout

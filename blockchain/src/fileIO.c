@@ -50,10 +50,16 @@ iResult write_to_file(Blockchain blockchain)
             snprintf(buffer, sizeof(buffer), "\t\t-Index: %d\r\n", block.transactions[num_trx].index);
             WriteFile(hFile, buffer, strlen(buffer), &bytesWritten, NULL);
 
-            snprintf(buffer, sizeof(buffer), "\t\tSender_id: %d\r\n", block.transactions[num_trx].sender_id);
+            snprintf(buffer, sizeof(buffer), "\t\tSensor mac address: 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x\r\n",
+                    block.transactions[num_trx].base_mac_addr[0],
+                    block.transactions[num_trx].base_mac_addr[1],
+                    block.transactions[num_trx].base_mac_addr[2],
+                    block.transactions[num_trx].base_mac_addr[3],
+                    block.transactions[num_trx].base_mac_addr[4],
+                    block.transactions[num_trx].base_mac_addr[5]);
             WriteFile(hFile, buffer, strlen(buffer), &bytesWritten, NULL);
 
-            snprintf(buffer, sizeof(buffer), "\t\tAmount: %d\r\n", block.transactions[num_trx].amount);
+            snprintf(buffer, sizeof(buffer), "\t\tTemperature: %f\r\n", block.transactions[num_trx].sen_temp);
             WriteFile(hFile, buffer, strlen(buffer), &bytesWritten, NULL);
 
             snprintf(buffer, sizeof(buffer), "\t\tTimestamp: %llu\r\n", block.transactions[num_trx].timestamp);

@@ -53,7 +53,7 @@ iResult build_and_verify_block(Blockchain *chain);
 
 iResult mine_block(block_t *block);
 
-iResult add_transaction(block_t *block, sensor_info_t *sen_info, char *data);
+iResult add_transaction(block_t *block, sensor_info_t *sen_info);
 
 void print_blockchain(Blockchain chain);
 

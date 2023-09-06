@@ -42,8 +42,9 @@
 
 #define PORT CONFIG_EXAMPLE_PORT
 
-static const char *TAG = "UDP_Client";
-static const char *payload = "Message from ESP32 ";
+static const char *TAG = "UDP Client:";
+static const char *payload = "Message from ESP32";
+static const char *permission = "3";
 
 typedef struct {
     uint8_t base_mac_addr[6];
@@ -55,7 +56,7 @@ temperature_sensor_handle_t temp_sensor = NULL;
 
 static void udp_client_task(void *pvParameters)
 {
-    char rx_buffer[128];
+    char rx_buffer[2];
     char host_ip[] = HOST_IP_ADDR;
     int addr_family = 0;
     int ip_protocol = 0;
@@ -73,17 +74,6 @@ static void udp_client_task(void *pvParameters)
         dest_addr.sin_port = htons(PORT);
         addr_family = AF_INET;
         ip_protocol = IPPROTO_IP;
-#elif defined(CONFIG_EXAMPLE_IPV6)
-        struct sockaddr_in6 dest_addr = { 0 };
-        inet6_aton(HOST_IP_ADDR, &dest_addr.sin6_addr);
-        dest_addr.sin6_family = AF_INET6;
-        dest_addr.sin6_port = htons(PORT);
-        dest_addr.sin6_scope_id = esp_netif_get_netif_impl_index(EXAMPLE_INTERFACE);
-        addr_family = AF_INET6;
-        ip_protocol = IPPROTO_IPV6;
-#elif defined(CONFIG_EXAMPLE_SOCKET_IP_INPUT_STDIN)
-        struct sockaddr_storage dest_addr = { 0 };
-        ESP_ERROR_CHECK(get_addr_from_stdin(PORT, SOCK_DGRAM, &ip_protocol, &addr_family, &dest_addr));
 #endif
 
         int sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
@@ -121,12 +111,18 @@ static void udp_client_task(void *pvParameters)
             // Data received
             else {
                 rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string
-                ESP_LOGI(TAG, "Received %d bytes from %s:", len, host_ip);
-                ESP_LOGI(TAG, "%s", rx_buffer);
-                if (strncmp(rx_buffer, "OK: ", 4) == 0) {
-                    ESP_LOGI(TAG, "Received expected message, reconnecting");
+                ESP_LOGI(TAG, "Received answer %s:", rx_buffer);
+                if (strncmp(rx_buffer, permission, 2) != 0) {
+                    ESP_LOGI(TAG, "Didn't received permission");
                     break;
                 }
+                ESP_LOGI(TAG, "Received permission, sending data");
+                err = sendto(sock, sen_info, sizeof(sensor_info_t), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+                if (err < 0) {
+                    ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
+                    break;
+                }
+                ESP_LOGI(TAG, "Data sent");
             }
 
             vTaskDelay(2000 / portTICK_PERIOD_MS);
@@ -170,5 +166,4 @@ void app_main(void)
     ESP_ERROR_CHECK(example_connect());
 
     xTaskCreate(udp_client_task, "udp_client", 4096, NULL, 5, NULL);
-    vTaskDelay(pdMS_TO_TICKS(1000));
 }

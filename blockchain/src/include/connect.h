@@ -15,7 +15,7 @@
 
 #define BROADCAST_MESSAGE "Hello"
 #define DEFAULT_BUFLEN 16
-#define ANSWER_LENGHT 1
+#define ANSWER_LENGHT 2
 
 typedef struct
 {

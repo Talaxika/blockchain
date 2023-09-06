@@ -103,11 +103,10 @@ iResult mine_block(block_t *block)
     return iRes;
 }
 
-iResult add_transaction(block_t *block, sensor_info_t *sen_info, char *data)
+iResult add_transaction(block_t *block, sensor_info_t *sen_info)
 {
     iResult iRes = RET_CODE_ERROR;
     transaction_t tx = {0};
-    char *end = NULL;
 
     if (block->num_transactions > MAX_TRANSACTIONS_SIZE) {
         printf("Max transaction size reached.\n");
@@ -135,7 +134,7 @@ iResult initializeFirstBlock(Blockchain *chain)
     chain->blocks[0].num_transactions = 1;
     chain->blocks[0].transactions[0].index = 0;
     chain->blocks[0].transactions[0].sen_temp = 0;
-    memcpy(chain->blocks[0].transactions[0].base_mac_addr, 0, 6);
+    memset(chain->blocks[0].transactions[0].base_mac_addr, 0, 6);
     chain->blocks[0].transactions[0].timestamp = get_timestamp();
 
     /* con_len, hash and nonce is generated from mining */
@@ -156,7 +155,7 @@ void print_block(block_t block) {
     for (int i = 0; i <  block.num_transactions; i++)
     {
         printf("    -Index: %d\n", block.transactions[i].index);
-        printf("    Temperature: %d\n", block.transactions[i].sen_temp);
+        printf("    Temperature: %f\n", block.transactions[i].sen_temp);
         printf("    Timestamp: %llu\n", block.transactions[i].timestamp);
         printf("    Sensor mac address: 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x\n",
                     block.transactions[i].base_mac_addr[0],

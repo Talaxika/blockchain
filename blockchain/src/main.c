@@ -208,10 +208,10 @@ iResult_thread main_recv(void *)
 
     while (rotations_TRX > 0)
     {
-        char* recv_buff = udp_server_receive(&iCfg, &sen_info, rotations_TRX);
-        if (NULL != recv_buff)
+        udp_server_receive(&iCfg, &sen_info, rotations_TRX);
+        if (0 != sen_info.sen_temp)
         {
-            add_transaction(&iBlockchain.blocks[iBlockchain.num_blocks], &sen_info, recv_buff);
+            add_transaction(&iBlockchain.blocks[iBlockchain.num_blocks], &sen_info);
             rotations_TRX--;
         }
     }
