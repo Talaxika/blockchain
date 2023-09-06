@@ -30,12 +30,12 @@ typedef struct
     SOCKET ClientSocket;
 } conn_cfg_t;
 
-iResult udp_server_receive(conn_cfg_t *cfg, sensor_info_t *sen_info, uint32_t rotations);
+iResult udp_server_receive(sensor_info_t *sen_info, uint32_t port);
 
-iResult connect_open(conn_cfg_t *cfg);
+iResult connect_open(void/*conn_cfg_t *cfg*/);
 
 char* connect_recieve(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations);
 
-iResult connect_close(conn_cfg_t *cfg);
+iResult connect_close(void/*conn_cfg_t *cfg*/);
 
 #endif /* CONNECT_H */

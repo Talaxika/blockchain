@@ -106,7 +106,7 @@ int main(int argc, char* argv[]) {
 
 #ifdef USE_CONNECTION
     /* Open the socket and start listening */
-    if((iRes_main = connect_open(&iCfg)) != RET_CODE_SUCCESS) {
+    if((iRes_main = connect_open()) != RET_CODE_SUCCESS) {
         printf("%s(): Unsuccessful Socket initialization", __func__);
         goto MAIN_END;
     }
@@ -208,7 +208,7 @@ iResult_thread main_recv(void *)
 
     while (rotations_TRX > 0)
     {
-        udp_server_receive(&iCfg, &sen_info, rotations_TRX);
+        udp_server_receive(&sen_info, uint32_t port);
         if (0 != sen_info.sen_temp)
         {
             add_transaction(&iBlockchain.blocks[iBlockchain.num_blocks], &sen_info);
@@ -269,7 +269,7 @@ iResult main_close(void)
 
 #ifdef USE_CONNECTION
     /* Shutdown connections, close existing sockets */
-    iResult = connect_close(&iCfg);
+    iResult = connect_close();
 #endif
 
     return iResult;

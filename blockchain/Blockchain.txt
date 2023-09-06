@@ -1,27 +1,38 @@
 Block: 0
-	Timestamp: 1691941925
+	Timestamp: 1694019096
 	Previous hash: 0
-	Current hash: 9704263153350133536
+	Current hash: 3247948925871621831
 	Nonce: 0
 	Transactions: 1
 		-Index: 0
-		Sender_id: 0
-		Amount: 0
-		Timestamp: 1691941925
+		Sensor mac address: 0x0, 0x0, 0x0, 0x0, 0x0, 0x0
+		Temperature: 0.000000
+		Timestamp: 1694019096
 Block: 1
-	Timestamp: 1691941932
-	Previous hash: 9704263153350133536
-	Current hash: 4203913631288698713
+	Timestamp: 1694019103
+	Previous hash: 3247948925871621831
+	Current hash: 5165146083716394500
 	Nonce: 0
 	Transactions: 2
 		-Index: 0
-		Sender_id: 111
-		Amount: 1691941926
-		Timestamp: 1691941927
+		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
+		Temperature: 32.000000
+		Timestamp: 1694019119
 		-Index: 1
-		Sender_id: 111
-		Amount: 1691941929
-		Timestamp: 1691941929
+		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
+		Temperature: 32.000000
+		Timestamp: 1694019122
 Block: 2
-	Previous hash: 4203913631288698713
-	Current hash: 2345241229470248225
+	Timestamp: 1694019129
+	Previous hash: 5165146083716394500
+	Current hash: 8732165297233164018
+	Nonce: 0
+	Transactions: 2
+		-Index: 0
+		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
+		Temperature: 32.000000
+		Timestamp: 1694019125
+		-Index: 1
+		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
+		Temperature: 32.000000
+		Timestamp: 1694019128
