@@ -9,6 +9,8 @@
 #define USE_CONNECTION
 #define USE_MINING
 
+#define MAX_DEVICES (3u)
+
 /*=========================== Local Typedefs ===========================*/
 /*======================================================================*/
 
@@ -20,9 +22,11 @@ HANDLE  thread_calc,
         thread_recv,
         thread_bcast,
         mutex_recv;
+HANDLE thread_device[MAX_DEVICES];
+
 transaction_t local_transactions[MAX_TRANSACTIONS_SIZE];
 volatile int stop_listening = 0;
-
+volatile bool stop_receiving = false;
 /* Make a function pointer so that it's more flexible.
  * It will be equal to the recv function*/
 // char* (*recv_cb)(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations);
@@ -133,11 +137,13 @@ int main(int argc, char* argv[]) {
         iResult_thread iRes_recv = 0;
         do
         {
+
             thread_calc = CreateThread(NULL, 0x0, main_mine, NULL, 0, NULL);
             if (thread_calc == NULL || thread_calc == INVALID_HANDLE_VALUE) {
                 printf("CreateThread error: %d\n", GetLastError());
                 return 1;
             }
+            stop_receiving = false;
 
 #ifdef USE_CONNECTION
             thread_recv = CreateThread(NULL, 0, main_recv, NULL, 0, NULL);
@@ -146,10 +152,11 @@ int main(int argc, char* argv[]) {
                 printf("CreateThread error: %d\n", GetLastError());
                 return 1;
             }
-            WaitForSingleObject(thread_recv, INFINITE);
+            WaitForSingleObject(thread_calc, INFINITE);
+            stop_receiving = true;
             // printf("%d", GetLastError());
 #endif
-        } while (WaitForSingleObject(thread_calc, INFINITE));
+        } while (WaitForSingleObject(thread_recv, INFINITE));
         // printf("%d", GetLastError());
         iBlockchain.num_blocks++;
         rotations_BLK--;
@@ -194,27 +201,20 @@ iResult_thread main_recv(void *)
 
     /* TODO: make threads accept and handle clients, the mutex should be used there */
 
-    // uint32_t dwCount=0, dwWaitResult = 0;
-    // dwWaitResult = WaitForSingleObject(mutex_recv, INFINITE);
-    // switch (dwWaitResult)
-    // {
-    //     // The thread got ownership of the mutex
-    //     case WAIT_OBJECT_0:
+    
 
     header_cfg_t iHdr_cfg = {0};
-    sensor_info_t sen_info = {0};
+    
     uint32_t rotations_TRX = ROTATIONS_TRX;
     memset(&local_transactions, 0, sizeof(transaction_t));
 
-    while (rotations_TRX > 0)
-    {
-        udp_server_receive(&sen_info, uint32_t port);
-        if (0 != sen_info.sen_temp)
-        {
-            add_transaction(&iBlockchain.blocks[iBlockchain.num_blocks], &sen_info);
-            rotations_TRX--;
-        }
+    for (int i = 0; i < MAX_DEVICES; i++) {
+        thread_device[i] = (HANDLE)_beginthreadex(NULL, 0, &udp_server_receive, NULL, 0, NULL);
     }
+
+    // Wait for the threads to complete (you can use a more sophisticated synchronization mechanism)
+    WaitForMultipleObjects(MAX_DEVICES, thread_device, TRUE, INFINITE);
+
     //         if (! ReleaseMutex(mutex_recv))
     //         {
     //             // Handle error.
@@ -229,6 +229,7 @@ iResult_thread main_recv(void *)
     return iRes;
 } /* main_recv() */
 #endif
+
 
 #ifdef USE_MINING
 iResult_thread main_mine(void *)
@@ -352,4 +353,105 @@ iResult start_upd_broadcast_listener()
     closesocket(sockfd);
     WSACleanup();
     return 0;
+}
+
+iResult udp_server_receive()
+{
+    char rx_buffer[20] = {0};
+    int addr_family = AF_INET;
+    int ip_protocol = 0;
+    struct sockaddr_in6 dest_addr;
+    struct sockaddr_in *dest_addr_ip4 = (struct sockaddr_in *)&dest_addr;
+    dest_addr_ip4->sin_addr.s_addr = htonl(INADDR_ANY);
+    dest_addr_ip4->sin_family = AF_INET;
+    dest_addr_ip4->sin_port = htons(DEFAULT_PORT);
+    ip_protocol = IPPROTO_IP;
+
+    int sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
+#ifdef PRINT_UDP
+    if (sock < 0) {
+        printf("Unable to create socket: errno %d", errno);
+        break;
+    }
+    printf("Socket created");
+#endif
+
+    // Set timeout
+    // struct timeval timeout;
+    // timeout.tv_sec = 10;
+    // timeout.tv_usec = 0;
+    uint32_t timeout = 3000;
+    
+    int err = 0;
+    err = bind(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+#ifdef PRINT_UDP
+    if (err < 0) {
+        printf("Socket unable to bind: errno %d", errno);
+    }
+    printf("Socket bound, port %d", PORT);
+#endif
+    if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) == SOCKET_ERROR) {
+        printf("setsocketopt error: %d", WSAGetLastError());
+    }
+    struct sockaddr_storage source_addr; // Large enough for both IPv4 or IPv6
+    socklen_t socklen = sizeof(source_addr);
+
+    while (stop_receiving == false) {
+        int len = 0;
+
+        len = recvfrom(sock, rx_buffer, ESP32_REQ_SIZE - 1, 0, (struct sockaddr *)&source_addr, &socklen);
+
+        // Error occurred during receiving
+        if (len < 0) {
+#ifdef PRINT_UDP
+            printf("recvfrom failed: errno %d", WSAGetLastError());
+#endif
+            break;
+        }
+        uint32_t dwCount=0, dwWaitResult = 0;
+        dwWaitResult = WaitForSingleObject(mutex_recv, INFINITE);
+        if (dwWaitResult == WAIT_OBJECT_0)
+        {
+            rx_buffer[ESP32_REQ_SIZE] = '\0'; // Null-terminate whatever we received and treat like a string
+            printf("Received request: %s\n", rx_buffer);
+            if (strncmp(rx_buffer, "ESP32", ESP32_REQ_SIZE) != 0) {
+                printf("Unknown request %s, no permission given\n", rx_buffer);
+                break;
+            } else {
+                sensor_info_t sen_info = {0};
+                len = recvfrom(sock, &sen_info, sizeof(sensor_info_t),
+                                    0, (struct sockaddr *)&source_addr, &socklen);
+                if (len < 0) {
+    // #ifdef PRINT_UDP
+                printf("recvfrom failed: errno %d\n",  WSAGetLastError());
+    // #endif
+                break;
+                }
+                // Data received
+                else {
+                printf("Bytes received: %d\n", len);
+                printf("Sensor temperature: %f Sensor mac address: 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x\n",
+                    sen_info.sen_temp,
+                    sen_info.base_mac_addr[0],
+                    sen_info.base_mac_addr[1],
+                    sen_info.base_mac_addr[2],
+                    sen_info.base_mac_addr[3],
+                    sen_info.base_mac_addr[4],
+                    sen_info.base_mac_addr[5]);
+                    add_transaction(&iBlockchain.blocks[iBlockchain.num_blocks], &sen_info);
+                }
+            }
+            ReleaseMutex(mutex_recv);
+        }
+
+    }
+
+    if (sock != -1) {
+#ifdef PRINT_UDP
+        printf("Shutting down socket and restarting...");
+#endif
+        closesocket(sock);
+        return 0;
+    }
+    return 1;
 }

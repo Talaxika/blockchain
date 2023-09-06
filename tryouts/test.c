@@ -1,75 +1,225 @@
-#include <stdio.h>
-#include <stdlib.h>
+/* BSD Socket API Example
+
+   This example code is in the Public Domain (or CC0 licensed, at your option.)
+
+   Unless required by applicable law or agreed to in writing, this
+   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+   CONDITIONS OF ANY KIND, either express or implied.
+*/
 #include <string.h>
-#include <math.h>
+#include <stdbool.h>
+#include <sys/param.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/event_groups.h"
+#include "esp_system.h"
+#include "esp_event.h"
+#include "esp_log.h"
+#include "nvs_flash.h"
+#include "esp_netif.h"
+#include "protocol_examples_common.h"
+#include "esp_mac.h"
 
-// Function to compute the greatest common divisor (GCD) of two numbers
-int gcd(int a, int b) {
-    if (b == 0) {
-        return a;
+#include "lwip/err.h"
+#include "lwip/sockets.h"
+#include "lwip/sys.h"
+#include <lwip/netdb.h>
+
+#include "driver/temperature_sensor.h"
+
+#ifdef CONFIG_EXAMPLE_SOCKET_IP_INPUT_STDIN
+#include "addr_from_stdin.h"
+#endif
+
+// #define IP_ADDRESS_IPv4 "192.168.1.6"
+
+#if defined(CONFIG_EXAMPLE_IPV4)
+#define HOST_IP_ADDR CONFIG_EXAMPLE_IPV4_ADDR
+#elif defined(CONFIG_EXAMPLE_IPV6)
+#define HOST_IP_ADDR CONFIG_EXAMPLE_IPV6_ADDR
+#else
+#define HOST_IP_ADDR "255.255.255.255"
+#endif
+
+#define PORT CONFIG_EXAMPLE_PORT
+
+static const char *TAG = "UDP Client:";
+static const char *payload_want = "ESP32 wants port";
+static const char *payload_send = "ESP32 wants to send";
+
+typedef struct {
+    uint8_t base_mac_addr[6];
+    float sen_temp;
+} sensor_info_t;
+
+static sensor_info_t sen_info = {0};
+temperature_sensor_handle_t temp_sensor = NULL;
+
+static bool is_first = true;
+
+static uint32_t port = 0;
+
+static uint32_t do_first_time()
+{
+    int addr_family = 0;
+    int ip_protocol = 0;
+
+    while (1) {
+#if defined(CONFIG_EXAMPLE_IPV4)
+        struct sockaddr_in dest_addr;
+        dest_addr.sin_addr.s_addr = inet_addr(HOST_IP_ADDR);
+        dest_addr.sin_family = AF_INET;
+        dest_addr.sin_port = htons(PORT);
+        addr_family = AF_INET;
+        ip_protocol = IPPROTO_IP;
+#endif
+        int sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
+        if (sock < 0) {
+            ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
+            break;
+        }
+
+        // Set timeout
+        struct timeval timeout;
+        timeout.tv_sec = 10;
+        timeout.tv_usec = 0;
+        setsockopt (sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout);
+
+        ESP_LOGI(TAG, "Socket created, sending to %s:%d", HOST_IP_ADDR, PORT);
+
+        while (1) {
+            int err = 0;
+
+            err = sendto(sock, payload_want, strlen(payload_want), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+            if (err < 0) {
+                ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
+                break;
+            } else {
+                err = recvfrom(sock, &port, sizeof(port), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+                if (err < 0) {
+                    ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
+                    break;
+                } else {
+                    ESP_LOGI(TAG, "Received port: %d", port);
+                    is_first = false;
+                    break;
+                }
+            }
+        }
+
+        if (sock != -1) {
+            ESP_LOGE(TAG, "Shutting down socket and restarting...");
+            shutdown(sock, 0);
+            close(sock);
+        }
+        break;
     }
-    return gcd(b, a % b);
+    vTaskDelete(NULL);
 }
 
-// Function to compute the modular inverse using the extended Euclidean algorithm
-int mod_inverse(int a, int m) {
-    for (int x = 1; x < m; x++) {
-        if ((a * x) % m == 1) {
-            return x;
+static uint32_t do_data_transfer()
+{
+    int addr_family = 0;
+    int ip_protocol = 0;
+
+    while (1) {
+#if defined(CONFIG_EXAMPLE_IPV4)
+        struct sockaddr_in dest_addr;
+        dest_addr.sin_addr.s_addr = inet_addr(HOST_IP_ADDR);
+        dest_addr.sin_family = AF_INET;
+        dest_addr.sin_port = htons(port);
+        addr_family = AF_INET;
+        ip_protocol = IPPROTO_IP;
+#endif
+        int sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
+        if (sock < 0) {
+            ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
+            break;
+        }
+
+        // Set timeout
+        struct timeval timeout;
+        timeout.tv_sec = 10;
+        timeout.tv_usec = 0;
+        setsockopt (sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout);
+
+        ESP_LOGI(TAG, "Socket created, sending to %s:%d", HOST_IP_ADDR, PORT);
+
+        while (1) {
+            int err = 0;
+
+            err = sendto(sock, payload_send, strlen(payload_send), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+            if (err < 0) {
+                ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
+                break;
+            } else {
+                ESP_LOGI(TAG, "Request sent: %s", payload_send);
+                ESP_ERROR_CHECK(temperature_sensor_get_celsius(temp_sensor, &sen_info.sen_temp));
+                vTaskDelay(1000 / portTICK_PERIOD_MS);
+                ESP_LOGI(TAG, "Sending temperature value %f", sen_info.sen_temp);
+                err = sendto(sock, &sen_info, sizeof(sensor_info_t), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+                if (err < 0) {
+                    ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
+                    break;
+                }
+            }
+
+            vTaskDelay(2000 / portTICK_PERIOD_MS);
+        }
+
+        if (sock != -1) {
+            ESP_LOGE(TAG, "Shutting down socket and restarting...");
+            shutdown(sock, 0);
+            close(sock);
         }
     }
-    return -1;
+    vTaskDelete(NULL);
 }
 
-// Function to perform modular exponentiation (base^exp % mod)
-int mod_exp(int base, int exp, int mod) {
-    int result = 1;
-    base = base % mod;
-
-    while (exp > 0) {
-        if (exp % 2 == 1) {
-            result = (result * base) % mod;
-        }
-
-        exp = exp >> 1;
-        base = (base * base) % mod;
+static void udp_client_task(void *pvParameters)
+{
+    if (is_first) {
+        do_first_time();
+    } else {
+        do_data_transfer();
     }
-
-    return result;
+    
 }
 
-// Function to encrypt a message using public key
-int encrypt(int plaintext, int publicKey, int modulus) {
-    return mod_exp(plaintext, publicKey, modulus);
-}
+void app_main(void)
+{
+    ESP_LOGI(TAG, "Install temperature sensor, expected temp ranger range: 10~50 ℃");
+    temperature_sensor_config_t temp_sensor_config = TEMPERATURE_SENSOR_CONFIG_DEFAULT(10, 50);
+    ESP_ERROR_CHECK(temperature_sensor_install(&temp_sensor_config, &temp_sensor));
 
-// Function to decrypt a ciphertext using private key
-int decrypt(int ciphertext, int privateKey, int modulus) {
-    return mod_exp(ciphertext, privateKey, modulus);
-}
+    ESP_LOGI(TAG, "Enable temperature sensor");
+    ESP_ERROR_CHECK(temperature_sensor_enable(temp_sensor));
 
-int main() {
-    // Key generation (simplified for demonstration)
-    int p = 61; // Prime number
-    int q = 53; // Prime number
-    int modulus = p * q;
-    int phi = (p - 1) * (q - 1);
-    int publicKey = 17; // Public exponent
-    int privateKey = mod_inverse(publicKey, phi);
+    esp_err_t ret = esp_read_mac(sen_info.base_mac_addr, ESP_MAC_EFUSE_FACTORY);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to get base MAC address from EFUSE BLK0. (%s)", esp_err_to_name(ret));
+        ESP_LOGE(TAG, "Aborting");
+        abort();
+    } else {
+        ESP_LOGI(TAG, "Base MAC Address read from EFUSE BLK0");
+    }
+    ESP_LOGI(TAG, "Sensor mac address: 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x\n",
+                    sen_info.base_mac_addr[0],
+                    sen_info.base_mac_addr[1],
+                    sen_info.base_mac_addr[2],
+                    sen_info.base_mac_addr[3],
+                    sen_info.base_mac_addr[4],
+                    sen_info.base_mac_addr[5]);
 
-    // Original message
-    int plaintext = 88;
+    ESP_ERROR_CHECK(nvs_flash_init());
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    // Encrypt the message using public key
-    int encrypted = encrypt(plaintext, publicKey, modulus);
+    /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
+     * Read "Establishing Wi-Fi or Ethernet Connection" section in
+     * examples/protocols/README.md for more information about this function.
+     */
+    ESP_ERROR_CHECK(example_connect());
 
-    // Decrypt the encrypted message using private key
-    int decrypted = decrypt(encrypted, privateKey, modulus);
-
-    // Display results
-    printf("Original plaintext: %d\n", plaintext);
-    printf("Encrypted ciphertext: %d\n", encrypted);
-    printf("Decrypted plaintext: %d\n", decrypted);
-
-    return 0;
+    xTaskCreate(udp_client_task, "udp_client", 4096, NULL, 5, NULL);
 }

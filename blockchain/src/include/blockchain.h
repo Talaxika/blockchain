@@ -9,7 +9,7 @@
 #define MAX_BLOCK_SIZE (6U)
 #define MAX_TRANSACTIONS_SIZE (12U)
 
-#define SLEEP_TIME  (7000U)
+#define SLEEP_TIME  (20000U)
 
 typedef struct {
   uint32_t n;

@@ -5,8 +5,7 @@
 #include "include/connect.h"
 
 #define PRINT_DEBUG
-#define MESSAGE_ESP_SIZE (19u)
-#define ESP32_REQ_SIZE (6u)
+
 
 // Need to link with Ws2_32.lib
 // #pragma comment (lib, "Ws2_32.lib")
@@ -174,98 +173,7 @@ iResult connect_close(void/*conn_cfg_t *cfg*/)
 }
 
 // #define PRINT_UDP
-iResult udp_server_receive(sensor_info_t *sen_info, uint32_t port)
-{
-    char rx_buffer[128] = {0};
-    int addr_family = AF_INET;
-    int ip_protocol = 0;
-    struct sockaddr_in6 dest_addr;
-    struct sockaddr_in *dest_addr_ip4 = (struct sockaddr_in *)&dest_addr;
-    dest_addr_ip4->sin_addr.s_addr = htonl(INADDR_ANY);
-    dest_addr_ip4->sin_family = AF_INET;
-    dest_addr_ip4->sin_port = htons(port);
-    ip_protocol = IPPROTO_IP;
 
-    int sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
-#ifdef PRINT_UDP
-    if (sock < 0) {
-        printf("Unable to create socket: errno %d", errno);
-        break;
-    }
-    printf("Socket created");
-#endif
-
-    // Set timeout
-    // struct timeval timeout;
-    // timeout.tv_sec = 10;
-    // timeout.tv_usec = 0;
-    uint32_t timeout = 3000;
-    
-    int err = 0;
-    err = bind(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
-#ifdef PRINT_UDP
-    if (err < 0) {
-        printf("Socket unable to bind: errno %d", errno);
-    }
-    printf("Socket bound, port %d", PORT);
-#endif
-    if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) == SOCKET_ERROR) {
-        printf("setsocketopt error: %d", WSAGetLastError());
-    }
-    struct sockaddr_storage source_addr; // Large enough for both IPv4 or IPv6
-    socklen_t socklen = sizeof(source_addr);
-
-    while (1) {
-        int len = 0;
-
-        len = recvfrom(sock, rx_buffer, ESP32_REQ_SIZE - 1, 0, (struct sockaddr *)&source_addr, &socklen);
-
-        // Error occurred during receiving
-        if (len < 0) {
-#ifdef PRINT_UDP
-            printf("recvfrom failed: errno %d", WSAGetLastError());
-#endif
-            break;
-        }
-        rx_buffer[ESP32_REQ_SIZE] = '\0'; // Null-terminate whatever we received and treat like a string
-        printf("Received request: %s\n", rx_buffer);
-        if (strncmp(rx_buffer, "ESP32", ESP32_REQ_SIZE) != 0) {
-            printf("Unknown request %s, no permission given\n", rx_buffer);
-            break;
-        } else {
-            len = recvfrom(sock, sen_info, sizeof(sensor_info_t),
-                                0, (struct sockaddr *)&source_addr, &socklen);
-            if (len < 0) {
-// #ifdef PRINT_UDP
-            printf("recvfrom failed: errno %d\n",  WSAGetLastError());
-// #endif
-            break;
-            }
-            // Data received
-            else {
-            printf("Bytes received: %d\n", len);
-            printf("Sensor temperature: %f Sensor mac address: 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x\n",
-                sen_info->sen_temp,
-                sen_info->base_mac_addr[0],
-                sen_info->base_mac_addr[1],
-                sen_info->base_mac_addr[2],
-                sen_info->base_mac_addr[3],
-                sen_info->base_mac_addr[4],
-                sen_info->base_mac_addr[5]);
-                break;
-            }
-        }
-    }
-
-    if (sock != -1) {
-#ifdef PRINT_UDP
-        printf("Shutting down socket and restarting...");
-#endif
-        closesocket(sock);
-        return 0;
-    }
-    return 1;
-}
 
 iResult send_broadcast_message(Blockchain *blockchain)
 {

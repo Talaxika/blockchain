@@ -5,7 +5,7 @@
 
 #define IP_ADDRESS_LOCALHOST "localhost"
 #define IP_ADDRESS_IPv4 "192.168.1.6"
-#define DEFAULT_PORT "27015"
+#define DEFAULT_PORT 12233
 #define BROADCAST_PORT 12345
 #define RESPONSE_TIMEOUT "5000" // Response timeout in seconds
 #define MAX_TIMEOUT (5U)
@@ -16,6 +16,9 @@
 #define BROADCAST_MESSAGE "Hello"
 #define DEFAULT_BUFLEN 16
 #define ANSWER_LENGHT 2
+
+#define MESSAGE_ESP_SIZE (19u)
+#define ESP32_REQ_SIZE (6u)
 
 typedef struct
 {
@@ -30,7 +33,7 @@ typedef struct
     SOCKET ClientSocket;
 } conn_cfg_t;
 
-iResult udp_server_receive(sensor_info_t *sen_info, uint32_t port);
+iResult udp_server_receive();
 
 iResult connect_open(void/*conn_cfg_t *cfg*/);
 

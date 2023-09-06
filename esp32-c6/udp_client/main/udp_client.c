@@ -43,8 +43,7 @@
 #define PORT CONFIG_EXAMPLE_PORT
 
 static const char *TAG = "UDP Client:";
-static const char *payload = "Message from ESP32";
-static const char *permission = "3";
+static const char *payload = "ESP32";
 
 typedef struct {
     uint8_t base_mac_addr[6];
@@ -56,17 +55,10 @@ temperature_sensor_handle_t temp_sensor = NULL;
 
 static void udp_client_task(void *pvParameters)
 {
-    char rx_buffer[2];
-    char host_ip[] = HOST_IP_ADDR;
     int addr_family = 0;
     int ip_protocol = 0;
 
     while (1) {
-
-        ESP_LOGI(TAG, "Read temperature");
-        ESP_ERROR_CHECK(temperature_sensor_get_celsius(temp_sensor, &sen_info.tsens_value));
-        ESP_LOGI(TAG, "Temperature value %f ℃", sen_info.tsens_value);
-
 #if defined(CONFIG_EXAMPLE_IPV4)
         struct sockaddr_in dest_addr;
         dest_addr.sin_addr.s_addr = inet_addr(HOST_IP_ADDR);
@@ -75,7 +67,6 @@ static void udp_client_task(void *pvParameters)
         addr_family = AF_INET;
         ip_protocol = IPPROTO_IP;
 #endif
-
         int sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
         if (sock < 0) {
             ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
@@ -91,38 +82,22 @@ static void udp_client_task(void *pvParameters)
         ESP_LOGI(TAG, "Socket created, sending to %s:%d", HOST_IP_ADDR, PORT);
 
         while (1) {
+            int err = 0;
 
-            int err = sendto(sock, payload, strlen(payload), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+            err = sendto(sock, payload, strlen(payload), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
             if (err < 0) {
                 ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
                 break;
-            }
-            ESP_LOGI(TAG, "Message sent");
-
-            struct sockaddr_storage source_addr; // Large enough for both IPv4 or IPv6
-            socklen_t socklen = sizeof(source_addr);
-            int len = recvfrom(sock, rx_buffer, sizeof(rx_buffer) - 1, 0, (struct sockaddr *)&source_addr, &socklen);
-
-            // Error occurred during receiving
-            if (len < 0) {
-                ESP_LOGE(TAG, "recvfrom failed: errno %d", errno);
-                break;
-            }
-            // Data received
-            else {
-                rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string
-                ESP_LOGI(TAG, "Received answer %s:", rx_buffer);
-                if (strncmp(rx_buffer, permission, 2) != 0) {
-                    ESP_LOGI(TAG, "Didn't received permission");
-                    break;
-                }
-                ESP_LOGI(TAG, "Received permission, sending data");
-                err = sendto(sock, sen_info, sizeof(sensor_info_t), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+            } else {
+                ESP_LOGI(TAG, "Request sent: %s", payload);
+                ESP_ERROR_CHECK(temperature_sensor_get_celsius(temp_sensor, &sen_info.sen_temp));
+                vTaskDelay(1000 / portTICK_PERIOD_MS);
+                ESP_LOGI(TAG, "Sending temperature value %f", sen_info.sen_temp);
+                err = sendto(sock, &sen_info, sizeof(sensor_info_t), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
                 if (err < 0) {
                     ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
                     break;
                 }
-                ESP_LOGI(TAG, "Data sent");
             }
 
             vTaskDelay(2000 / portTICK_PERIOD_MS);
@@ -154,6 +129,13 @@ void app_main(void)
     } else {
         ESP_LOGI(TAG, "Base MAC Address read from EFUSE BLK0");
     }
+    ESP_LOGI(TAG, "Sensor mac address: 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x\n",
+                    sen_info.base_mac_addr[0],
+                    sen_info.base_mac_addr[1],
+                    sen_info.base_mac_addr[2],
+                    sen_info.base_mac_addr[3],
+                    sen_info.base_mac_addr[4],
+                    sen_info.base_mac_addr[5]);
 
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
