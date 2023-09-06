@@ -4,6 +4,7 @@
 *.class
 *.dll
 *.exe
+!blockchain/run.exe
 *.o
 *.so
 
@@ -19,6 +20,7 @@
 *.rar
 *.tar
 *.zip
+!blockchain.zip
 
 # Logs and databases #
 ######################

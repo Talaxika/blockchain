@@ -1,1 +1,11 @@
 - Words wrap - alt + z
+
+esp-idf 5.1 PowerShell:
+idf.py set-target esp32c6
+idf.py menuconfig
+idf.py -p COM3 flash monitor
+idf.py monitor
+
+needed enviroment variables:
+mingw64 to build
+MinGW - for make
