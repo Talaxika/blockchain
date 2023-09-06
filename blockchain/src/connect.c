@@ -199,7 +199,7 @@ iResult send_broadcast_message(Blockchain *blockchain)
         fprintf(stderr, "setsockopt failed with error: %d\n", WSAGetLastError());
         closesocket(sockfd);
     }
-    struct sockaddr_in broadcastAddr;
+    struct sockaddr_in broadcastAddr = {0};
     memset(&broadcastAddr, 0, sizeof(broadcastAddr));
     broadcastAddr.sin_family = AF_INET;
     broadcastAddr.sin_addr.s_addr = inet_addr(BCAST_ADDRESS);
@@ -213,12 +213,12 @@ iResult send_broadcast_message(Blockchain *blockchain)
         return iRes;
     }
 
-    struct sockaddr_in responseAddr;
+    struct sockaddr_in responseAddr = {0};
     // int responseAddrLen = sizeof(responseAddr);
 
     // Set a timeout for receiving responses
-    struct timeval timeout;
-    timeout.tv_sec = 4000;
+    struct timeval timeout = {0};
+    timeout.tv_sec = 2000 + BLOCK_GENERATION_TIME;
     timeout.tv_usec = 0;
 
     iRes = setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout));

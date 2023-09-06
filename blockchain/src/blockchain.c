@@ -107,7 +107,7 @@ iResult add_transaction(block_t *block, sensor_info_t *sen_info)
 {
     iResult iRes = RET_CODE_ERROR;
     transaction_t tx = {0};
-
+    
     if (block->num_transactions > MAX_TRANSACTIONS_SIZE) {
         printf("Max transaction size reached.\n");
         return iRes;

@@ -3,7 +3,7 @@
 #include "include/sha256.h"
 #include "include/fileIO.h"
 
-#define ROTATIONS_BLK (2U)
+#define ROTATIONS_BLK (4)
 #define ROTATIONS_TRX (2U)
 
 #define USE_CONNECTION
@@ -21,7 +21,7 @@ conn_cfg_t iCfg;
 HANDLE  thread_calc,
         thread_recv,
         thread_bcast,
-        mutex_recv;
+        mutex;
 HANDLE thread_device[MAX_DEVICES];
 
 transaction_t local_transactions[MAX_TRANSACTIONS_SIZE];
@@ -121,9 +121,9 @@ int main(int argc, char* argv[]) {
 
     // print_blockchain(iBlockchain);
 
-    mutex_recv = CreateMutex(NULL, FALSE, NULL);
+    mutex = CreateMutex(NULL, FALSE, NULL);
 
-    if (mutex_recv == NULL) {
+    if (mutex == NULL) {
         printf("CreateMutex error: %d\n", GetLastError());
         return 1;
     }
@@ -137,7 +137,7 @@ int main(int argc, char* argv[]) {
         iResult_thread iRes_recv = 0;
         do
         {
-
+            Sleep(500);
             thread_calc = CreateThread(NULL, 0x0, main_mine, NULL, 0, NULL);
             if (thread_calc == NULL || thread_calc == INVALID_HANDLE_VALUE) {
                 printf("CreateThread error: %d\n", GetLastError());
@@ -153,6 +153,7 @@ int main(int argc, char* argv[]) {
                 return 1;
             }
             WaitForSingleObject(thread_calc, INFINITE);
+            WaitForMultipleObjects(MAX_DEVICES, thread_device, TRUE, INFINITE);
             stop_receiving = true;
             // printf("%d", GetLastError());
 #endif
@@ -201,21 +202,20 @@ iResult_thread main_recv(void *)
 
     /* TODO: make threads accept and handle clients, the mutex should be used there */
 
-    
 
     header_cfg_t iHdr_cfg = {0};
-    
     uint32_t rotations_TRX = ROTATIONS_TRX;
     memset(&local_transactions, 0, sizeof(transaction_t));
 
-    for (int i = 0; i < MAX_DEVICES; i++) {
-        thread_device[i] = (HANDLE)_beginthreadex(NULL, 0, &udp_server_receive, NULL, 0, NULL);
-    }
+    /* deosnt work as expected*/
+    do
+    {
+        for (int i = 0; i < MAX_DEVICES; i++) {
+            thread_device[i] = (HANDLE)_beginthreadex(NULL, 0, &udp_server_receive, NULL, 0, NULL);
+        }
+    } while (stop_receiving == false);
 
-    // Wait for the threads to complete (you can use a more sophisticated synchronization mechanism)
-    WaitForMultipleObjects(MAX_DEVICES, thread_device, TRUE, INFINITE);
-
-    //         if (! ReleaseMutex(mutex_recv))
+    //         if (! ReleaseMutex(mutex))
     //         {
     //             // Handle error.
     //         }
@@ -236,7 +236,7 @@ iResult_thread main_mine(void *)
 {
     iResult_thread iRes = RET_CODE_SUCCESS;
     printf("Started mining operation\n");
-    Sleep(SLEEP_TIME);
+    Sleep(BLOCK_GENERATION_TIME);
 
     build_and_verify_block(&iBlockchain);
     iRes = mine_block(&iBlockchain.blocks[iBlockchain.num_blocks]);
@@ -266,7 +266,7 @@ iResult main_close(void)
     CloseHandle(thread_calc);
     CloseHandle(thread_recv);
     CloseHandle(thread_bcast);
-    CloseHandle(mutex_recv);
+    CloseHandle(mutex);
 
 #ifdef USE_CONNECTION
     /* Shutdown connections, close existing sockets */
@@ -309,8 +309,8 @@ iResult start_upd_broadcast_listener()
         WSACleanup();
         return iRes;
     }
-
-    char buffer[1024];
+    
+    char buffer[1024] = {0};
     struct sockaddr_in clientAddr;
     int clientAddrLen = sizeof(clientAddr);
 
@@ -323,33 +323,38 @@ iResult start_upd_broadcast_listener()
             iRes = RET_CODE_ERROR;
             return iRes;
         }
+        WaitForSingleObject(thread_recv, INFINITE);
+        uint32_t dwCount=0, dwWaitResult = 0;
+        dwWaitResult = WaitForSingleObject(mutex, INFINITE);
+        if (dwWaitResult == WAIT_OBJECT_0)
+        {
+            buffer[numBytes] = '\0';
+            printf("Received message from %s:%d: %s\n", inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port), buffer);
 
-        buffer[numBytes] = '\0';
-        printf("Received message from %s:%d: %s\n", inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port), buffer);
-
-        // Send a response back
-        // Serialize the structure before sending
-        // char serializedData[sizeof(Blockchain)];
-        // memcpy(serializedData, blockchain, sizeof(Blockchain));
-        uint64_t send_size = (uint64_t) sizeof(iBlockchain);
-        printf("Sending blockchain.\n");
-        iRes = sendto(sockfd, &send_size, sizeof(uint64_t), 0, (struct sockaddr *)&clientAddr, sizeof(clientAddr));
-        if (iRes == SOCKET_ERROR) {
-            fprintf(stderr, "sendto failed with error: %ld\n", WSAGetLastError());
-            closesocket(sockfd);
-            WSACleanup();
-            return 1;
-        } else {
-            iRes = sendto(sockfd, &iBlockchain, send_size, 0, (struct sockaddr *)&clientAddr, sizeof(clientAddr));
+            // Send a response back
+            // Serialize the structure before sending
+            // char serializedData[sizeof(Blockchain)];
+            // memcpy(serializedData, blockchain, sizeof(Blockchain));
+            uint64_t send_size = (uint64_t) sizeof(iBlockchain);
+            printf("Sending blockchain.\n");
+            iRes = sendto(sockfd, &send_size, sizeof(uint64_t), 0, (struct sockaddr *)&clientAddr, sizeof(clientAddr));
             if (iRes == SOCKET_ERROR) {
                 fprintf(stderr, "sendto failed with error: %ld\n", WSAGetLastError());
                 closesocket(sockfd);
                 WSACleanup();
                 return 1;
+            } else {
+                iRes = sendto(sockfd, &iBlockchain, send_size, 0, (struct sockaddr *)&clientAddr, sizeof(clientAddr));
+                if (iRes == SOCKET_ERROR) {
+                    fprintf(stderr, "sendto failed with error: %ld\n", WSAGetLastError());
+                    closesocket(sockfd);
+                    WSACleanup();
+                    return 1;
+                }
             }
+            ReleaseMutex(mutex);
         }
     }
-    printf("Got Here\n");
     closesocket(sockfd);
     WSACleanup();
     return 0;
@@ -409,7 +414,7 @@ iResult udp_server_receive()
             break;
         }
         uint32_t dwCount=0, dwWaitResult = 0;
-        dwWaitResult = WaitForSingleObject(mutex_recv, INFINITE);
+        dwWaitResult = WaitForSingleObject(mutex, INFINITE);
         if (dwWaitResult == WAIT_OBJECT_0)
         {
             rx_buffer[ESP32_REQ_SIZE] = '\0'; // Null-terminate whatever we received and treat like a string
@@ -429,7 +434,7 @@ iResult udp_server_receive()
                 }
                 // Data received
                 else {
-                printf("Bytes received: %d\n", len);
+                printf("Transaction number: %d\n", iBlockchain.blocks[iBlockchain.num_blocks].num_transactions);
                 printf("Sensor temperature: %f Sensor mac address: 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x\n",
                     sen_info.sen_temp,
                     sen_info.base_mac_addr[0],
@@ -441,9 +446,8 @@ iResult udp_server_receive()
                     add_transaction(&iBlockchain.blocks[iBlockchain.num_blocks], &sen_info);
                 }
             }
-            ReleaseMutex(mutex_recv);
+            ReleaseMutex(mutex);
         }
-
     }
 
     if (sock != -1) {
