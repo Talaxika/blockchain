@@ -48,6 +48,7 @@ static const char *payload = "ESP32";
 typedef struct {
     uint8_t base_mac_addr[6];
     float sen_temp;
+    char cmd[6];
 } sensor_info_t;
 
 static sensor_info_t sen_info = {0};
@@ -57,6 +58,7 @@ static void udp_client_task(void *pvParameters)
 {
     int addr_family = 0;
     int ip_protocol = 0;
+    strncpy(sen_info.cmd,"ESP32", 6);
 
     while (1) {
 #if defined(CONFIG_EXAMPLE_IPV4)
@@ -84,21 +86,21 @@ static void udp_client_task(void *pvParameters)
         while (1) {
             int err = 0;
 
-            err = sendto(sock, payload, strlen(payload), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
-            if (err < 0) {
-                ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
-                break;
-            } else {
-                ESP_LOGI(TAG, "Request sent: %s", payload);
+            // err = sendto(sock, payload, strlen(payload), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+            // if (err < 0) {
+            //     ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
+            //     break;
+            // } else {
+                // ESP_LOGI(TAG, "Request sent: %s", payload);
                 ESP_ERROR_CHECK(temperature_sensor_get_celsius(temp_sensor, &sen_info.sen_temp));
-                vTaskDelay(1000 / portTICK_PERIOD_MS);
+                // vTaskDelay(1000 / portTICK_PERIOD_MS);
                 ESP_LOGI(TAG, "Sending temperature value %f", sen_info.sen_temp);
                 err = sendto(sock, &sen_info, sizeof(sensor_info_t), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
                 if (err < 0) {
                     ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
                     break;
                 }
-            }
+            // }
 
             vTaskDelay(2000 / portTICK_PERIOD_MS);
         }

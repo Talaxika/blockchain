@@ -24,7 +24,7 @@ typedef long unsigned int iResult_thread;
 typedef struct {
     uint8_t base_mac_addr[6];
     float sen_temp;
-    uint16_t port;
+    char cmd[6];
 } sensor_info_t;
 
 

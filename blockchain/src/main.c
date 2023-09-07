@@ -207,11 +207,11 @@ iResult_thread main_recv(void *)
     uint32_t rotations_TRX = ROTATIONS_TRX;
     memset(&local_transactions, 0, sizeof(transaction_t));
 
-    /* deosnt work as expected*/
+    
     do
     {
         for (int i = 0; i < MAX_DEVICES; i++) {
-            thread_device[i] = (HANDLE)_beginthreadex(NULL, 0, &udp_server_receive, NULL, 0, NULL);
+            thread_device[i] = CreateThread(NULL, 0, udp_server_receive, NULL, 0, NULL);
         }
     } while (stop_receiving == false);
 
@@ -360,7 +360,7 @@ iResult start_upd_broadcast_listener()
     return 0;
 }
 
-iResult udp_server_receive()
+iResult_thread udp_server_receive(void *)
 {
     char rx_buffer[20] = {0};
     int addr_family = AF_INET;
@@ -404,36 +404,35 @@ iResult udp_server_receive()
     while (stop_receiving == false) {
         int len = 0;
 
-        len = recvfrom(sock, rx_buffer, ESP32_REQ_SIZE - 1, 0, (struct sockaddr *)&source_addr, &socklen);
+        // len = recvfrom(sock, rx_buffer, ESP32_REQ_SIZE - 1, 0, (struct sockaddr *)&source_addr, &socklen);
 
         // Error occurred during receiving
+//         if (len < 0) {
+// #ifdef PRINT_UDP
+//             printf("recvfrom failed: errno %d", WSAGetLastError());
+// #endif
+//             break;
+//         }
+            
+        sensor_info_t sen_info = {0};
+        len = recvfrom(sock, &sen_info, sizeof(sensor_info_t),
+                                0, (struct sockaddr *)&source_addr, &socklen);
+        // rx_buffer[ESP32_REQ_SIZE] = '\0'; // Null-terminate whatever we received and treat like a string
+        // printf("Received request: %s\n", rx_buffer);
         if (len < 0) {
-#ifdef PRINT_UDP
-            printf("recvfrom failed: errno %d", WSAGetLastError());
-#endif
-            break;
+// #ifdef PRINT_UDP
+            // printf("recvfrom failed: errno %d\n",  WSAGetLastError());
+// #endif
+        break;
         }
         uint32_t dwCount=0, dwWaitResult = 0;
         dwWaitResult = WaitForSingleObject(mutex, INFINITE);
         if (dwWaitResult == WAIT_OBJECT_0)
         {
-            rx_buffer[ESP32_REQ_SIZE] = '\0'; // Null-terminate whatever we received and treat like a string
-            printf("Received request: %s\n", rx_buffer);
-            if (strncmp(rx_buffer, "ESP32", ESP32_REQ_SIZE) != 0) {
-                printf("Unknown request %s, no permission given\n", rx_buffer);
+            if (strncmp(sen_info.cmd, "ESP32", ESP32_REQ_SIZE) != 0) {
+                printf("Unknown request %s, no permission given\n", sen_info.cmd);
                 break;
             } else {
-                sensor_info_t sen_info = {0};
-                len = recvfrom(sock, &sen_info, sizeof(sensor_info_t),
-                                    0, (struct sockaddr *)&source_addr, &socklen);
-                if (len < 0) {
-    // #ifdef PRINT_UDP
-                printf("recvfrom failed: errno %d\n",  WSAGetLastError());
-    // #endif
-                break;
-                }
-                // Data received
-                else {
                 printf("Transaction number: %d\n", iBlockchain.blocks[iBlockchain.num_blocks].num_transactions);
                 printf("Sensor temperature: %f Sensor mac address: 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x\n",
                     sen_info.sen_temp,
@@ -444,9 +443,8 @@ iResult udp_server_receive()
                     sen_info.base_mac_addr[4],
                     sen_info.base_mac_addr[5]);
                     add_transaction(&iBlockchain.blocks[iBlockchain.num_blocks], &sen_info);
-                }
             }
-            ReleaseMutex(mutex);
+        ReleaseMutex(mutex);
         }
     }
 

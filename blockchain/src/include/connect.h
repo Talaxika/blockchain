@@ -33,7 +33,7 @@ typedef struct
     SOCKET ClientSocket;
 } conn_cfg_t;
 
-iResult udp_server_receive();
+iResult_thread udp_server_receive(void *);
 
 iResult connect_open(void/*conn_cfg_t *cfg*/);
 
