@@ -1,6 +1,5 @@
 #include "include/connect.h"
 #include "include/blockchain.h"
-#include "include/sha256.h"
 
 #define UINT64_MAXVAL    (18446744073709551615U)
 #define MULT_PADDING_VAL (10000U)
@@ -13,21 +12,9 @@ time_t get_timestamp()
     return t;
 }
 
-uint32_t get_num_len(uint64_t value)
+/* Private and public key encryption is not introduced, but can be, for more security*/
+static uint32_t mod_exp(uint32_t base, uint32_t exp, uint32_t mod)
 {
-    uint32_t l=1;
-
-    while(value > 9)
-    {
-        l++;
-        value/=10;
-    }
-
-    return l;
-}
-
-
-static uint32_t mod_exp(uint32_t base, uint32_t exp, uint32_t mod) {
     uint32_t result = 1;
     base = base % mod;
 
@@ -43,25 +30,28 @@ static uint32_t mod_exp(uint32_t base, uint32_t exp, uint32_t mod) {
     return result;
 }
 
-    /*
-    int p = 61; // Prime number
-    int q = 53; // Prime number
-    int modulus = p * q;
-    int phi = (p - 1) * (q - 1);
-    int publicKey = 17; // Public exponent
-    int privateKey = mod_inverse(publicKey, phi);
-    */
+/*
+int p = 61; // Prime number
+int q = 53; // Prime number
+int modulus = p * q;
+int phi = (p - 1) * (q - 1);
+int publicKey = 17; // Public exponent
+int privateKey = mod_inverse(publicKey, phi);
+*/
 // Function to perform RSA encryption
-uint32_t rsa_encrypt(uint32_t enc_timestamp, RSAKey publicKey) {
+uint32_t rsa_encrypt(uint32_t enc_timestamp, RSAKey publicKey)
+{
     return mod_exp(enc_timestamp, publicKey.e, publicKey.n);
 }
 
 // Function to perform RSA decryption
-uint32_t rsa_decrypt(uint32_t dec_timestamp, RSAKey privateKey) {
+uint32_t rsa_decrypt(uint32_t dec_timestamp, RSAKey privateKey)
+{
     return mod_exp(dec_timestamp, privateKey.d, privateKey.n);
 }
 
-uint64_t hash(uint64_t input) {
+uint64_t hash(uint64_t input)
+{
     const uint64_t prime = 1099511628211ULL;  // A large prime number
     const uint64_t offset = 14695981039346656037ULL;  // Another constant
 
@@ -75,6 +65,16 @@ uint64_t hash(uint64_t input) {
     return hash;
 }
 
+uint64_t hash_on_transactions(block_t block)
+{
+    uint64_t sum = 0;
+    for (uint64_t i = 0; i < block.num_transactions; i++)
+    {
+        sum+=(uint64_t)block.transactions[i].sen_temp;
+    }
+    return hash(sum);
+}
+
 iResult build_and_verify_block(Blockchain *blockchain)
 {
     block_t curr_block = blockchain->blocks[blockchain->num_blocks];
@@ -83,9 +83,19 @@ iResult build_and_verify_block(Blockchain *blockchain)
     curr_block.index = blockchain->num_blocks;
     curr_block.timestamp = get_timestamp();
 
-    curr_block.previous_hash = hash((uint64_t)prev_block.timestamp);
+    if (curr_block.index == 1){
+        curr_block.previous_hash = hash((uint64_t)prev_block.timestamp);
+    } else {
+        if (prev_block.num_transactions != 0) {
+            curr_block.previous_hash = hash_on_transactions(prev_block);
+        } else {
+            curr_block.previous_hash = hash((uint64_t)prev_block.timestamp);
+        }
+    }
+
     if (curr_block.previous_hash != prev_block.current_hash) {
         printf("Hash value mismatch on block index %d", curr_block.index);
+        printf("Prev hash: %llu, curr hash %llu",prev_block.current_hash, curr_block.previous_hash);
     }
 
     blockchain->blocks[blockchain->num_blocks] = curr_block;
@@ -107,7 +117,7 @@ iResult add_transaction(block_t *block, sensor_info_t *sen_info)
 {
     iResult iRes = RET_CODE_ERROR;
     transaction_t tx = {0};
-    
+
     if (block->num_transactions > MAX_TRANSACTIONS_SIZE) {
         printf("Max transaction size reached.\n");
         return iRes;
@@ -173,6 +183,3 @@ void print_blockchain(Blockchain chain) {
         print_block(chain.blocks[i]);
     }
 }
-
-
-

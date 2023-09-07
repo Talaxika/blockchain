@@ -1,306 +1,42 @@
 Block: 0
-	Timestamp: 1694092300
+	Timestamp: 1694127918
 	Previous hash: 0
-	Current hash: 17511624148316144624
+	Current hash: 5956898719076940884
 	Nonce: 0
 	Transactions: 1
 		-Index: 0
 		Sensor mac address: 0x0, 0x0, 0x0, 0x0, 0x0, 0x0
 		Temperature: 0.000000
-		Timestamp: 1694092300
+		Timestamp: 1694127918
 Block: 1
-	Timestamp: 1694092321
-	Previous hash: 17511624148316144624
-	Current hash: 17244863450608632093
+	Timestamp: 1694127923
+	Previous hash: 5956898719076940884
+	Current hash: 8285552217075831931
 	Nonce: 0
-	Transactions: 17
+	Transactions: 2
 		-Index: 0
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 25.000000
-		Timestamp: 1694092301
+		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
+		Temperature: 32.000000
+		Timestamp: 1694127919
 		-Index: 1
 		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092302
-		-Index: 2
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 26.000000
-		Timestamp: 1694092303
-		-Index: 3
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092304
-		-Index: 4
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 25.000000
-		Timestamp: 1694092305
-		-Index: 5
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092306
-		-Index: 6
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 25.000000
-		Timestamp: 1694092307
-		-Index: 7
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092308
-		-Index: 8
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 25.000000
-		Timestamp: 1694092309
-		-Index: 9
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092310
-		-Index: 10
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 25.000000
-		Timestamp: 1694092311
-		-Index: 11
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092312
-		-Index: 12
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 26.000000
-		Timestamp: 1694092313
-		-Index: 13
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092314
-		-Index: 14
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 25.000000
-		Timestamp: 1694092315
-		-Index: 15
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092316
-		-Index: 17
-		Sensor mac address: 0xf0, 0x43, 0x89, 0xe0, 0x61, 0xc9
-		Temperature: 25.000000
-		Timestamp: 17244863450608632093
+		Temperature: 30.000000
+		Timestamp: 1694127921
 Block: 2
-	Timestamp: 1694092341
-	Previous hash: 17244863450608632093
-	Current hash: 7582380774060043705
+	Timestamp: 1694127928
+	Previous hash: 8285552217075831931
+	Current hash: 18029551886160594354
 	Nonce: 0
-	Transactions: 17
-		-Index: 0
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 25.000000
-		Timestamp: 1694092321
-		-Index: 1
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092322
-		-Index: 2
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 25.000000
-		Timestamp: 1694092323
-		-Index: 3
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092324
-		-Index: 4
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 26.000000
-		Timestamp: 1694092325
-		-Index: 5
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092326
-		-Index: 6
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 26.000000
-		Timestamp: 1694092327
-		-Index: 7
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092328
-		-Index: 8
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 25.000000
-		Timestamp: 1694092329
-		-Index: 9
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092330
-		-Index: 10
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 26.000000
-		Timestamp: 1694092331
-		-Index: 11
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092332
-		-Index: 12
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 26.000000
-		Timestamp: 1694092333
-		-Index: 13
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092334
-		-Index: 14
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 26.000000
-		Timestamp: 1694092335
-		-Index: 15
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092336
-		-Index: 17
-		Sensor mac address: 0x1d, 0x1, 0xa5, 0xed, 0xf0, 0xf
-		Temperature: 26.000000
-		Timestamp: 7582380774060043705
-Block: 3
-	Timestamp: 1694092362
-	Previous hash: 7582380774060043705
-	Current hash: 3284677326929656158
-	Nonce: 0
-	Transactions: 17
+	Transactions: 3
 		-Index: 0
 		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092342
-		-Index: 1
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 26.000000
-		Timestamp: 1694092343
-		-Index: 2
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092344
-		-Index: 3
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 26.000000
-		Timestamp: 1694092345
-		-Index: 4
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092346
-		-Index: 5
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 26.000000
-		Timestamp: 1694092347
-		-Index: 6
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092348
-		-Index: 7
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 26.000000
-		Timestamp: 1694092349
-		-Index: 8
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092350
-		-Index: 9
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 26.000000
-		Timestamp: 1694092351
-		-Index: 10
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092352
-		-Index: 11
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 26.000000
-		Timestamp: 1694092353
-		-Index: 12
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092354
-		-Index: 13
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 26.000000
-		Timestamp: 1694092355
-		-Index: 14
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092356
-		-Index: 15
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 26.000000
-		Timestamp: 1694092357
-		-Index: 17
-		Sensor mac address: 0xb9, 0xad, 0x99, 0xd, 0x24, 0x7
-		Temperature: 25.000000
-		Timestamp: 3284677326929656158
-Block: 4
-	Timestamp: 1694092383
-	Previous hash: 3284677326929656158
-	Current hash: 17367599087004891067
-	Nonce: 0
-	Transactions: 17
-		-Index: 0
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 26.000000
-		Timestamp: 1694092363
+		Temperature: 29.000000
+		Timestamp: 1694127923
 		-Index: 1
 		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092364
+		Temperature: 29.000000
+		Timestamp: 1694127925
 		-Index: 2
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 26.000000
-		Timestamp: 1694092365
-		-Index: 3
 		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092366
-		-Index: 4
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 26.000000
-		Timestamp: 1694092367
-		-Index: 5
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092368
-		-Index: 6
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 26.000000
-		Timestamp: 1694092369
-		-Index: 7
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092370
-		-Index: 8
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 26.000000
-		Timestamp: 1694092371
-		-Index: 9
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092372
-		-Index: 10
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 26.000000
-		Timestamp: 1694092373
-		-Index: 11
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092374
-		-Index: 12
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 26.000000
-		Timestamp: 1694092375
-		-Index: 13
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092376
-		-Index: 14
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x36, 0xdc
-		Temperature: 26.000000
-		Timestamp: 1694092377
-		-Index: 15
-		Sensor mac address: 0x40, 0x4c, 0xca, 0x40, 0x2e, 0x18
-		Temperature: 25.000000
-		Timestamp: 1694092378
-		-Index: 17
-		Sensor mac address: 0x5e, 0xf9, 0x6b, 0x39, 0xa0, 0x84
-		Temperature: 26.000000
-		Timestamp: 17367599087004891067
+		Temperature: 29.000000
+		Timestamp: 1694127927

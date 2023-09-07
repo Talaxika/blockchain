@@ -30,8 +30,6 @@
 #include "addr_from_stdin.h"
 #endif
 
-// #define IP_ADDRESS_IPv4 "192.168.1.6"
-
 #if defined(CONFIG_EXAMPLE_IPV4)
 #define HOST_IP_ADDR CONFIG_EXAMPLE_IPV4_ADDR
 #elif defined(CONFIG_EXAMPLE_IPV6)
@@ -74,34 +72,17 @@ static void udp_client_task(void *pvParameters)
             ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
             break;
         }
-
-        // Set timeout
-        struct timeval timeout;
-        timeout.tv_sec = 10;
-        timeout.tv_usec = 0;
-        setsockopt (sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout);
-
         ESP_LOGI(TAG, "Socket created, sending to %s:%d", HOST_IP_ADDR, PORT);
 
         while (1) {
             int err = 0;
-
-            // err = sendto(sock, payload, strlen(payload), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
-            // if (err < 0) {
-            //     ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
-            //     break;
-            // } else {
-                // ESP_LOGI(TAG, "Request sent: %s", payload);
-                ESP_ERROR_CHECK(temperature_sensor_get_celsius(temp_sensor, &sen_info.sen_temp));
-                // vTaskDelay(1000 / portTICK_PERIOD_MS);
-                ESP_LOGI(TAG, "Sending temperature value %f", sen_info.sen_temp);
-                err = sendto(sock, &sen_info, sizeof(sensor_info_t), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
-                if (err < 0) {
-                    ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
-                    break;
-                }
-            // }
-
+            ESP_ERROR_CHECK(temperature_sensor_get_celsius(temp_sensor, &sen_info.sen_temp));
+            ESP_LOGI(TAG, "Sending temperature value %f", sen_info.sen_temp);
+            err = sendto(sock, &sen_info, sizeof(sensor_info_t), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+            if (err < 0) {
+                ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
+                break;
+            }
             vTaskDelay(2000 / portTICK_PERIOD_MS);
         }
 

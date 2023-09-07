@@ -15,6 +15,8 @@
 #define RET_CODE_SUCCESS (0U)
 #define RET_CODE_TIMEOUT (200U)
 
+// #define PRINT_DEBUG
+#define TIMEOUT_RECV (3000u) /* in ms */
 #define MAX_HASH_SIZE (32U)
 
 typedef uint32_t iResult;
@@ -26,6 +28,5 @@ typedef struct {
     float sen_temp;
     char cmd[6];
 } sensor_info_t;
-
 
 #endif /* UTIL_H */

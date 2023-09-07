@@ -9,8 +9,9 @@
 #define MAX_BLOCK_SIZE (8U)
 #define MAX_TRANSACTIONS_SIZE (16U)
 
-#define BLOCK_GENERATION_TIME  (20000U)
+#define BLOCK_GENERATION_TIME  (5000U)
 
+/* Unused */
 typedef struct {
   uint32_t n;
   uint32_t e;
@@ -53,10 +54,14 @@ iResult build_and_verify_block(Blockchain *chain);
 
 iResult mine_block(block_t *block);
 
+uint64_t hash_on_transactions(block_t block);
+
 iResult add_transaction(block_t *block, sensor_info_t *sen_info);
 
 void print_blockchain(Blockchain chain);
 
+/* Function is defined here, and not in connect.h,
+ * because access to the Blockchain structure is needed*/
 iResult send_broadcast_message(Blockchain *blockchain);
 
 #endif /* BLOCKCHAIN_H */

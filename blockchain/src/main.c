@@ -1,10 +1,8 @@
 #include "include/blockchain.h"
 #include "include/connect.h"
-#include "include/sha256.h"
 #include "include/fileIO.h"
 
-#define ROTATIONS_BLK (4)
-#define ROTATIONS_TRX (2U)
+#define ROTATIONS_BLK (2)
 
 #define USE_CONNECTION
 #define USE_MINING
@@ -17,7 +15,6 @@
 /*==================== Global Variable Declarations ====================*/
 Blockchain iBlockchain = {0};
 block_t block = {0};
-conn_cfg_t iCfg;
 HANDLE  thread_calc,
         thread_recv,
         thread_bcast,
@@ -27,13 +24,9 @@ HANDLE thread_device[MAX_DEVICES];
 transaction_t local_transactions[MAX_TRANSACTIONS_SIZE];
 volatile int stop_listening = 0;
 volatile bool stop_receiving = false;
-/* Make a function pointer so that it's more flexible.
- * It will be equal to the recv function*/
-// char* (*recv_cb)(conn_cfg_t *cfg, header_cfg_t *hdr_cfg, uint32_t rotations);
 /*======================================================================*/
 
 /*==================== Global Function Declarations ====================*/
-
 /* Main initializing function.
  *  - Opens the sockets for connection.
  *  - Initializes the blockchain
@@ -50,12 +43,19 @@ iResult main_open(void);
  **/
 iResult_thread WINAPI main_recv(void *);
 
+/* Supportive receiving function.
+ *  Main function, called from main_recv(). It is defined inside the main file,
+ *  because the mutexes and threads are needed to ease its use and synchronization.
+ *  The purpose is signal the function that the program is ready to be finished.
+ **/
+iResult_thread udp_server_receive(void *);
+
 /* Main mining function.
  *  - This is the mine function that is ran from thread_mine.
  *  - It's purpose is to mine, while the thread_recv (main_recv)
  *  function is receiving. The goal is to achieve parallelism.
  *  - Everything about mining a block and filling it's header structure,
- *  except the transactions, which are generated fro main-recv,
+ *  except the transactions, which are generated from main_recv,
  *  is generated from this function.
  *  - After the main_mine and main_recv functions are completed
  *  successfully, the process of block generation is successful.
@@ -74,15 +74,15 @@ iResult_thread WINAPI main_bcast(void *);
 
 /* Supportive broadcasting function.
  *  Main function, called from main_bcast(). It is defined inside the main file,
- *  because we need the "stop_listening" variable. The purpose is signal the function
+ *  because the "stop_listening" variable is needed. The purpose is signal the function
  *  that the program is ready to be finished.
  **/
-iResult start_upd_broadcast_listener();
+iResult start_upd_broadcast_listener(void);
 
 /* Main de-initializing function.
- *  - Closes the sockets.
+ *  - Closes the conenctions.
  *  - Prints the blockchain
- *
+ *  - Writes the output in a file
  **/
 iResult main_close(void);
 /*======================================================================*/
@@ -104,40 +104,21 @@ int main(int argc, char* argv[]) {
 
     thread_bcast = CreateThread(NULL, 0, main_bcast, NULL, 0, NULL);
     if (thread_bcast == NULL || thread_bcast == INVALID_HANDLE_VALUE) {
-        printf("CreateThread error: %d\n", GetLastError());
+        printf("CreateThread error when creating broadcast thread: %d\n", GetLastError());
         return 1;
     }
 
-#ifdef USE_CONNECTION
-    /* Open the socket and start listening */
-    if((iRes_main = connect_open()) != RET_CODE_SUCCESS) {
-        printf("%s(): Unsuccessful Socket initialization", __func__);
-        goto MAIN_END;
-    }
-#endif /* USE_CONNECTION */
-    // Check what is done by other blockchains
-    // TODO: if first generate, else wait to recieve BC
-    /******SETUP*******/
-
-    // print_blockchain(iBlockchain);
-
     mutex = CreateMutex(NULL, FALSE, NULL);
-
     if (mutex == NULL) {
         printf("CreateMutex error: %d\n", GetLastError());
         return 1;
     }
 
-    /******Begin processes, each rotation is one block added*******/
+    /* Begin processes, each rotation is one block added */
     uint32_t rotations_BLK = ROTATIONS_BLK;
-
-#ifdef USE_MINING
     while (rotations_BLK > 0) {
-        iResult_thread iRes_mine = 0;
-        iResult_thread iRes_recv = 0;
         do
         {
-            Sleep(500);
             thread_calc = CreateThread(NULL, 0x0, main_mine, NULL, 0, NULL);
             if (thread_calc == NULL || thread_calc == INVALID_HANDLE_VALUE) {
                 printf("CreateThread error: %d\n", GetLastError());
@@ -145,7 +126,6 @@ int main(int argc, char* argv[]) {
             }
             stop_receiving = false;
 
-#ifdef USE_CONNECTION
             thread_recv = CreateThread(NULL, 0, main_recv, NULL, 0, NULL);
 
             if (thread_recv == NULL || thread_recv == INVALID_HANDLE_VALUE) {
@@ -155,23 +135,18 @@ int main(int argc, char* argv[]) {
             WaitForSingleObject(thread_calc, INFINITE);
             WaitForMultipleObjects(MAX_DEVICES, thread_device, TRUE, INFINITE);
             stop_receiving = true;
-            // printf("%d", GetLastError());
-#endif
         } while (WaitForSingleObject(thread_recv, INFINITE));
-        // printf("%d", GetLastError());
+        iBlockchain.blocks[iBlockchain.num_blocks].current_hash = hash_on_transactions(iBlockchain.blocks[iBlockchain.num_blocks]);
         iBlockchain.num_blocks++;
         rotations_BLK--;
     }
-#endif
 
 MAIN_END:
-
     /******Clean up, print, etc...*******/
-    // Verify hashes of other blocks
     iRes_main = main_close();
-    // periodically write in file
-    return 0;
-} /* main() */
+
+    return iRes_main;
+} /* main(void) */
 
 
 /*==================== Global Function Definitions ====================*/
@@ -181,15 +156,18 @@ iResult main_open(void)
 
     /* Initiate the genesis block */
     if((iResult = initializeFirstBlock(&iBlockchain)) != RET_CODE_SUCCESS) {
-        printf("%s(): Unsuccessful Block initialization", __func__);
+        printf("%s(): Unsuccessful Blockchain initialization", __func__);
         goto END;
     }
 
-
+    if((iResult = connect_open()) != RET_CODE_SUCCESS) {
+        printf("%s(): Unsuccessful connection initialization", __func__);
+        goto END;
+    }
 
 END:
     return iResult;
-} /* main_open() */
+} /* main_open(void) */
 
 
 
@@ -197,37 +175,17 @@ END:
 iResult_thread main_recv(void *)
 {
     iResult_thread iRes = RET_CODE_ERROR;
-
     printf("Started connection operation\n");
-
-    /* TODO: make threads accept and handle clients, the mutex should be used there */
-
-
-    header_cfg_t iHdr_cfg = {0};
-    uint32_t rotations_TRX = ROTATIONS_TRX;
     memset(&local_transactions, 0, sizeof(transaction_t));
-
-    
     do
     {
         for (int i = 0; i < MAX_DEVICES; i++) {
             thread_device[i] = CreateThread(NULL, 0, udp_server_receive, NULL, 0, NULL);
         }
     } while (stop_receiving == false);
-
-    //         if (! ReleaseMutex(mutex))
-    //         {
-    //             // Handle error.
-    //         }
-    //         break;
-
-    //     // The thread got ownership of an abandoned mutex
-    //     case WAIT_ABANDONED:
-    //         return FALSE;
-    // }
     printf("Done connection operation\n");
     return iRes;
-} /* main_recv() */
+} /* main_recv(void *) */
 #endif
 
 
@@ -236,37 +194,41 @@ iResult_thread main_mine(void *)
 {
     iResult_thread iRes = RET_CODE_SUCCESS;
     printf("Started mining operation\n");
+    /* "Sleep" and an easy hashing algorithms are used, instead of time
+     * consuming and complex hashing algorithm tha mines blocks.*/
     Sleep(BLOCK_GENERATION_TIME);
 
     build_and_verify_block(&iBlockchain);
-    iRes = mine_block(&iBlockchain.blocks[iBlockchain.num_blocks]);
+    
+    /* First a block hash is generated based on timestamp,
+     * and if transactions have been completed, hash will be re-generated
+     * based on them for more security.*/
+    // iRes = mine_block(&iBlockchain.blocks[iBlockchain.num_blocks]);
 
     printf("Done mining operation\n");
     return iRes;
-} /* main_mine() */
+} /* main_mine(void *) */
 #endif
 
 iResult_thread WINAPI main_bcast(void *)
 {
-    iResult_thread iRes = start_upd_broadcast_listener(&iBlockchain);
+    iResult_thread iRes = start_upd_broadcast_listener();
     return iRes;
-}
+} /* main_bcast(void *) */
 
 iResult main_close(void)
 {
     iResult iResult = RET_CODE_SUCCESS;
 
-#if 1
-    print_blockchain(iBlockchain);
-    write_to_file(iBlockchain);
-#endif
-
     stop_listening = 1;
-    WaitForSingleObject(thread_bcast, MAX_TIMEOUT);
+    WaitForSingleObject(thread_bcast, MAX_TIMEOUT_THREAD);
     CloseHandle(thread_calc);
     CloseHandle(thread_recv);
     CloseHandle(thread_bcast);
     CloseHandle(mutex);
+
+    print_blockchain(iBlockchain);
+    write_to_file(iBlockchain);
 
 #ifdef USE_CONNECTION
     /* Shutdown connections, close existing sockets */
@@ -274,10 +236,9 @@ iResult main_close(void)
 #endif
 
     return iResult;
-} /* main_close() */
-/*=====================================================================*/
+} /* main_close(void) */
 
-iResult start_upd_broadcast_listener()
+iResult start_upd_broadcast_listener(void)
 {
     iResult iRes = RET_CODE_SUCCESS;
     WSADATA wsaData = {0};
@@ -309,7 +270,7 @@ iResult start_upd_broadcast_listener()
         WSACleanup();
         return iRes;
     }
-    
+
     char buffer[1024] = {0};
     struct sockaddr_in clientAddr;
     int clientAddrLen = sizeof(clientAddr);
@@ -331,10 +292,6 @@ iResult start_upd_broadcast_listener()
             buffer[numBytes] = '\0';
             printf("Received message from %s:%d: %s\n", inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port), buffer);
 
-            // Send a response back
-            // Serialize the structure before sending
-            // char serializedData[sizeof(Blockchain)];
-            // memcpy(serializedData, blockchain, sizeof(Blockchain));
             uint64_t send_size = (uint64_t) sizeof(iBlockchain);
             printf("Sending blockchain.\n");
             iRes = sendto(sockfd, &send_size, sizeof(uint64_t), 0, (struct sockaddr *)&clientAddr, sizeof(clientAddr));
@@ -358,10 +315,11 @@ iResult start_upd_broadcast_listener()
     closesocket(sockfd);
     WSACleanup();
     return 0;
-}
+} /* start_upd_broadcast_listener(void) */
 
 iResult_thread udp_server_receive(void *)
 {
+    iResult_thread iRes = RET_CODE_SUCCESS;
     char rx_buffer[20] = {0};
     int addr_family = AF_INET;
     int ip_protocol = 0;
@@ -372,58 +330,43 @@ iResult_thread udp_server_receive(void *)
     dest_addr_ip4->sin_port = htons(DEFAULT_PORT);
     ip_protocol = IPPROTO_IP;
 
-    int sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
-#ifdef PRINT_UDP
-    if (sock < 0) {
-        printf("Unable to create socket: errno %d", errno);
-        break;
+    SOCKET sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
+    int err = 0;
+    if (sock == SOCKET_ERROR) {
+        // printf("Unable to create socket: error %d", WSAGetLastError());
     }
-    printf("Socket created");
+#ifdef PRINT_DEBUG
+    printf("Socket created\n");
 #endif
 
     // Set timeout
-    // struct timeval timeout;
-    // timeout.tv_sec = 10;
-    // timeout.tv_usec = 0;
     uint32_t timeout = 3000;
-    
-    int err = 0;
     err = bind(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
-#ifdef PRINT_UDP
-    if (err < 0) {
-        printf("Socket unable to bind: errno %d", errno);
+
+    if (err == SOCKET_ERROR) {
+        // printf("Socket unable to bind: error %d", WSAGetLastError());
     }
-    printf("Socket bound, port %d", PORT);
+#ifdef PRINT_DEBUG
+    printf("Socket bound, port %d", DEFAULT_PORT);
 #endif
-    if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) == SOCKET_ERROR) {
+    err = setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout));
+    if (err == SOCKET_ERROR) {
+#ifdef PRINT_DEBUG
         printf("setsocketopt error: %d", WSAGetLastError());
+#endif
     }
-    struct sockaddr_storage source_addr; // Large enough for both IPv4 or IPv6
+    struct sockaddr_storage source_addr;
     socklen_t socklen = sizeof(source_addr);
-
-    while (stop_receiving == false) {
-        int len = 0;
-
-        // len = recvfrom(sock, rx_buffer, ESP32_REQ_SIZE - 1, 0, (struct sockaddr *)&source_addr, &socklen);
-
-        // Error occurred during receiving
-//         if (len < 0) {
-// #ifdef PRINT_UDP
-//             printf("recvfrom failed: errno %d", WSAGetLastError());
-// #endif
-//             break;
-//         }
-            
+    do {
         sensor_info_t sen_info = {0};
-        len = recvfrom(sock, &sen_info, sizeof(sensor_info_t),
+        int len = recvfrom(sock, &sen_info, sizeof(sensor_info_t),
                                 0, (struct sockaddr *)&source_addr, &socklen);
-        // rx_buffer[ESP32_REQ_SIZE] = '\0'; // Null-terminate whatever we received and treat like a string
-        // printf("Received request: %s\n", rx_buffer);
+
         if (len < 0) {
-// #ifdef PRINT_UDP
-            // printf("recvfrom failed: errno %d\n",  WSAGetLastError());
+// #ifdef PRINT_DEBUG
+            // printf("recvfrom failed: error %d\n",  WSAGetLastError());
+            break;
 // #endif
-        break;
         }
         uint32_t dwCount=0, dwWaitResult = 0;
         dwWaitResult = WaitForSingleObject(mutex, INFINITE);
@@ -446,14 +389,16 @@ iResult_thread udp_server_receive(void *)
             }
         ReleaseMutex(mutex);
         }
-    }
+    } while (stop_receiving == false);
 
     if (sock != -1) {
-#ifdef PRINT_UDP
+#ifdef PRINT_DEBUG
         printf("Shutting down socket and restarting...");
 #endif
         closesocket(sock);
         return 0;
     }
     return 1;
-}
+} /* udp_server_receive(void *) */
+
+/*=====================================================================*/
